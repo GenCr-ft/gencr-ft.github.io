@@ -1,0 +1,16 @@
+# Gencraft Studio - Canonical yamllint Configuration
+# SSoT: gcs-devops-standards/.yamllint.yaml
+extends: default
+
+rules:
+  # Il est peu pratique de forcer une longueur de ligne pour les fichiers de config.
+  line-length:
+    max: 120  # Augmentation de la limite à 120 caractères.
+
+  # Standardise l'indentation des commentaires.
+  comments-indentation: enable
+
+  # Autorise les commentaires en ligne avec un seul espace.
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1

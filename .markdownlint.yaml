@@ -1,0 +1,41 @@
+# Gencraft Standard .markdownlint.yaml (v1.3 - Approved)
+# SSoT: gcs-devops-standards/tooling/assets/configs/.markdownlint.yaml
+# This version is refined to be less restrictive on legitimate formatting choices.
+
+default: true
+
+# MD013: Line length -> DISABLED
+# Rationale: Too restrictive for technical documentation.
+MD013: false
+
+# MD025: Multiple top-level headers in the same document -> CONFIGURED
+# Rationale: We specify that the frontmatter 'title' should not be considered
+# as a top-level heading for this rule, allowing a markdown H1 in the body.
+MD025:
+  level: 1
+  front_matter_title: "" # This tells the linter to ignore the frontmatter title
+
+# MD029: Ordered list style -> CONFIGURED
+# Rationale: Changed from "one" to "ordered" to enforce a consistent
+# sequential numbering (1., 2., 3.) which is more natural to write.
+MD029:
+  style: "ordered"
+
+# MD033: Inline HTML -> DISABLED
+# Rationale: Allows for necessary HTML tags like <br>.
+MD033: false
+
+# MD041: First line in file should be a top-level header -> DISABLED
+# Rationale: All our documents must start with YAML frontmatter.
+MD041: false
+
+# --- Other consistency rules remain active ---
+MD007:
+  indent: 2
+MD035:
+  style: "---"
+MD046:
+  style: "fenced"
+MD047: true
+MD048:
+  style: "backtick"
