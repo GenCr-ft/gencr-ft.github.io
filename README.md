@@ -1,15 +1,16 @@
 ---
 docId: DEV-READ-002
-title: '[Project Title]'
+title: gencr-ft.github.io
 version: 0.1.0
 authors:
-- '[Initial Author/Team]'
+- GenCr@ft Studio
 reviewers:
-- '[Lead Name]'
-creation_date: YYYY-MM-DD
+- GenCr@ft Studio
+creation_date: '2026-04-28'
 language: en
-summary: '[A clear and concise one-sentence summary of the project''s purpose.]'
-last_updated_date: YYYY-MM-DD
+summary: Public GitHub Pages site for GenCr@ft Studio, serving as the external web
+  presence at https://gencr-ft.github.io.
+last_updated_date: '2026-04-28'
 metadata:
   lifecycle-stage: draft
   keywords:
@@ -28,81 +29,41 @@ metadata:
 knowledgeGuardian:
 - "\xC9douard (GCT-DVO-DVSST-001)"
 ---
-# [Project Title]
+# gencr-ft.github.io
 
-> [A brief one-sentence description of the project.]
+> Public GitHub Pages site for GenCr@ft Studio, accessible at [https://gencr-ft.github.io](https://gencr-ft.github.io).
 
 ## Overview
 
-[A more detailed description of the project, its purpose, and its goals. Explain the problem it solves and its place within the GenCr@t Studio ecosystem.]
+This repository hosts the external-facing website for GenCr@ft Studio. It is a static site served via GitHub Pages, currently presenting a placeholder landing page while the studio is in early development.
 
 ## Index of Contents
 
-### Subdirectories
-
-- `[/docs](./docs/)`: Contains detailed documentation.
-- `[/src](./src/)`: Contains the source code.
-- *... (Add other important directories as the project grows)*
-
 ### Files
 
-- `[README.md](DEV-READ-002.project-title.md)`: This document.
-- `[CONTRIBUTING.md](CONTRIBUTING.md)`: Guidelines for how to contribute to this project.
-- `[LICENSE](LICENSE)`: The license under which this project is released.
-- *... (Add other important files as the project grows)*
+- `index.html`: The main landing page (English).
+- `_config.yml`: Jekyll configuration (theme: tactile).
+- `README.md`: This document.
 
-## 🚀 Getting Started
+## Getting Started
 
-This section provides instructions on how to get a local copy up and running for development and testing purposes.
+This is a static HTML site with no build step required. To preview locally:
 
-### Prerequisites
+```sh
+git clone https://github.com/GenCr-ft/gencr-ft.github.io.git
+cd gencr-ft.github.io
+# Open index.html directly in a browser, or serve with any static file server:
+python3 -m http.server 8080
+```
 
-- List any software, tools, or libraries that users need to install before they can use this project.
-- *Example: A running instance of the Authentication Service is required.*
-- *Example: Refer to the main [Developer Onboarding Guide](link-to-GOV-002) for base system setup.*
+## Contributing
 
-### Installation
+All changes are proposed via Pull Requests. See the organization-wide [CONTRIBUTING.md](https://github.com/GenCr-ft/.github/blob/main/CONTRIBUTING.md) for standards.
 
-1. **Clone the repository:**
-
-    ```sh
-    git clone [URL_OF_THIS_REPO]
-    cd [REPO_NAME]
-    ```
-
-2. **Install project dependencies:**
-
-    ```sh
-    # Add commands for installing dependencies (e.g., npm install, poetry install)
-    ```
-
-3. **Set up pre-commit hooks:**
-
-    ```sh
-    pre-commit install
-    ```
-
-## Usage
-
-Provide examples of how to use the project. Include code snippets for CLI tools or screenshots for applications where appropriate. Explain the main features and how a user can interact with them.
-
-## 🤝 Contributing
-
-We welcome contributions! All changes are proposed via Pull Requests. Please read our organization-wide **[CONTRIBUTING.md](https://github.com/GenCr-ft/.github/blob/main/CONTRIBUTING.md)** to learn about our development process, branch naming conventions, commit message standards, and the PR review process.
-
-For reporting bugs or requesting features, please use the templates provided in the "New Issue" button on GitHub.
-
-## 📜 License
-
-This project is licensed under the **MIT License** - see the organization's default [LICENSE](https://github.com/GenCr-ft/.github/blob/main/LICENSE) file for details.
-
----
-
-## IA Instructions
+## AI Instructions
 
 **Purpose for AI Agents:**
 
-- Use the `docId` (`[docId]`) for direct reference and in all traceability records.
-- To understand the document's purpose, parse the `summary` field in the frontmatter.
-- To understand the document's status and ownership, parse the `status`, `authors`, and `reviewers` fields.
-- Navigate to related documents or dependencies using the relative links provided in the "Index of Contents" or other sections.
+- Use the `docId` (`DEV-READ-002`) for direct reference and in all traceability records.
+- This repository contains a single HTML page served publicly as the studio's external web presence.
+- When updating site content, edit `index.html`. The site language must be English.

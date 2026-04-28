@@ -37,7 +37,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-        # Exclure les fichiers qui peuvent contenir des faux positifs
+        # Exclude files that may produce false positives
         exclude: .*\.lock|pyproject.toml|.*\.js
 
   # ===== YAML Linting =====
@@ -112,7 +112,7 @@ repos:
 
   # ===== Gencraft SSoT Linters (Custom Hooks) =====
   - repo: https://github.com/GenCr-ft/gcd-ops-scripts.git
-    rev: v2.7.0  # Utiliser le dernier tag stable de nos outils
+    rev: v2.7.0  # Use the latest stable tag of our tools
     hooks:
       - id: metadata-linter
         exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|README\.md)
