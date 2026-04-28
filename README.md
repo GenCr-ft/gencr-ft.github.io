@@ -3,10 +3,10 @@ docId: DEV-READ-002
 title: gencr-ft.github.io
 version: 0.1.0
 authors:
-- '[PLACEHOLDER — replace with actual author/team]'
+- GenCr@ft Studio
 reviewers:
-- '[PLACEHOLDER — replace with reviewer name]'
-creation_date: '2025-05-01'
+- GenCr@ft Studio
+creation_date: '2026-04-28'
 language: en
 summary: Public GitHub Pages site for GenCr@ft Studio, serving as the external web
   presence at https://gencr-ft.github.io.
@@ -60,7 +60,7 @@ python3 -m http.server 8080
 
 All changes are proposed via Pull Requests. See the organization-wide [CONTRIBUTING.md](https://github.com/GenCr-ft/.github/blob/main/CONTRIBUTING.md) for standards.
 
-## IA Instructions
+## AI Instructions
 
 **Purpose for AI Agents:**
 
