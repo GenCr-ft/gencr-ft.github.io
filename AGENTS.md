@@ -55,3 +55,24 @@ SSoT compliance workflow validates frontmatter on Markdown files on push/PR.
 - Keep content consistent with the studio's public messaging — no internal roadmap, financial, or confidential information in `index.html`.
 - All Markdown files must carry valid SSoT YAML frontmatter.
 - Do not add build tooling (webpack, npm scripts, etc.) without an ADR or explicit instruction.
+
+## Gap Protocol
+
+Any gap, defect, or action item found while working in this repo **must become a GitHub Issue before proceeding** — nothing lives only in conversation context or memory.
+
+```bash
+# Route: governance and studio-wide items → gcs-project-management
+gh issue create --repo GenCr-ft/gcs-project-management \
+  --title "[gencr-ft.github.io] Short description of the gap" \
+  --body "## Summary
+
+## Evidence
+
+## Ref
+ENG-BACK-NNN (if known)"
+
+# Immediately add to Project #16:
+gh project item-add 16 --owner GenCr-ft --url <issue-url>
+```
+
+Full routing table: workspace `AGENTS.md §9 — Gap Identification Protocol`.
