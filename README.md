@@ -10,7 +10,7 @@ creation_date: '2026-04-28'
 language: en
 summary: Public GitHub Pages site for GenCr@ft Studio, serving as the external web
   presence at https://gencr-ft.github.io.
-last_updated_date: '2026-04-28'
+last_updated_date: '2026-05-20'
 metadata:
   lifecycle-stage: draft
   keywords:

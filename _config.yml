@@ -1,1 +1,19 @@
+# GenCr@ft Studio Website Configuration
+title: "GenCr@ft Studio"
+description: "Voxel authority, procedural worlds, and agent-first engineering."
+baseurl: ""
+url: "https://gencr-ft.github.io"
+
+# Build Settings
 theme: tactile
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# SSoT Compliance
+docId: WEB-CONF-001
+metadata:
+  lifecycle-stage: approved
+  scope: studio-wide
+  domain: documentation
+  doc-type: configuration
