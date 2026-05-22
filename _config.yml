@@ -3,6 +3,9 @@ title: "GenCr@ft Studio"
 description: "Voxel authority, procedural worlds, and agent-first engineering."
 baseurl: ""
 url: "https://gencr-ft.github.io"
+author:
+  name: "GenCr@ft Studio"
+  email: ""
 
 # Build Settings
 theme: tactile
