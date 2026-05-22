@@ -14,9 +14,12 @@ last_updated_date: '2026-05-20'
 metadata:
   lifecycle-stage: draft
   keywords:
-  - tag1
-  - tag2
-  - project
+  - gencraft-studio
+  - aethel
+  - voxel-rpg
+  - indie-game
+  - game-development
+  - github-pages
   scope: studio
   domain: devops
   doc-type: readme
@@ -26,8 +29,7 @@ metadata:
   - governance-team
   - project-leads
   security-classification: l2_confidential
-knowledgeGuardian:
-- "\xC9douard (GCT-DVO-DVSST-001)"
+knowledgeGuardian: "Édouard (GCT-DVO-DVSST-001)"
 ---
 # gencr-ft.github.io
 
