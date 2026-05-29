@@ -1,0 +1,29 @@
+{
+  "projectId": "@gencraft/gencr-ft.github.io",
+  "lifecycle": "active",
+  "unifiedStack": "static-jekyll",
+  "publicAttributes": {
+    "title": "GenCr@ft Studio",
+    "description": "GenCr@ft Studio — building Aethel, a next-generation multiplayer voxel RPG.",
+    "url": "https://gencr-ft.github.io",
+    "contact": "contact@gencr-ft.fr"
+  },
+  "verificationGates": {
+    "html-lint": {
+      "type": "format-validation",
+      "target": "index.html"
+    },
+    "ssot-frontmatter": {
+      "type": "compliance-validation",
+      "targets": [
+        "README.md",
+        "AGENTS.md",
+        "_AUDIT_ANALYSIS.md"
+      ]
+    },
+    "jekyll-config": {
+      "type": "configuration-validation",
+      "target": "_config.yml"
+    }
+  }
+}

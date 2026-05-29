@@ -120,7 +120,7 @@ repos:
     rev: v2.7.0  # Use the latest stable tag of our tools
     hooks:
       - id: metadata-linter
-        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|README\.md)
+        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/)
       - id: naming-linter
         exclude: *ssot_exclude
       - id: link-linter

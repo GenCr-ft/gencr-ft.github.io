@@ -1,78 +1,66 @@
+---
+docId: DEV-AGNT-002
+title: AGENTS.md - gencr-ft.github.io
+version: 1.0.0
+authors:
+- GenCr@ft Studio
+creation_date: '2026-05-25'
+last_updated_date: '2026-05-25'
+language: en
+summary: Authoritative onboarding and workspace contract pointers for AI agents in gencr-ft.github.io.
+metadata:
+  lifecycle-stage: approved
+  scope: studio-wide
+  domain: engineering
+  doc-type: onboarding-guide
+  security-classification: l2_confidential
+---
 # AGENTS.md — gencr-ft.github.io
 
-## Project Overview
+> **Read this file first.** This is the authoritative onboarding guide for any contributor — human or AI — starting work in this website repository. It points directly to computable active contracts.
 
-Public GitHub Pages landing site for GenCr@ft Studio, served at `https://gencr-ft.github.io`. Static HTML (Jekyll theme: tactile) presenting the studio's external web presence. Contains a single landing page describing Aethel and linking to the GitHub org. No build step required.
+---
 
-## Setup
+## 1. Project Overview & Active State
 
-```bash
-git clone https://github.com/GenCr-ft/gencr-ft.github.io.git
-cd gencr-ft.github.io
-# Preview locally (no build needed):
-python3 -m http.server 8080
-# Then open http://localhost:8080
-```
+Public GitHub Pages landing site for GenCr@ft Studio, served at `https://gencr-ft.github.io`.
+- **Stack**: Static Jekyll (tactile theme).
+- **Status**: Active development.
+- **Unified Contract**: [project-state.json](file:///home/lgan/hxgn/dev/claude/exp/gencr-ft.github.io/project-state.json)
+- **Active Validator**: [scripts/verify-contracts.sh](file:///home/lgan/hxgn/dev/claude/exp/gencr-ft.github.io/scripts/verify-contracts.sh)
 
-## Development
+---
 
-Edit `index.html` directly for content changes. The Jekyll `_config.yml` sets `theme: tactile` and is used by GitHub Pages automatically — no local Jekyll install needed for simple edits.
+## 2. Developer Operations & Key Commands
 
-## Build
+- **Onboarding**: `bash ./onboard.sh`
+- **Testing & Verification**: `bash ./test.sh`
+- **Local Preview**:
+  ```bash
+  python3 -m http.server 8080
+  # Open http://localhost:8080
+  ```
 
-No build step. GitHub Pages deploys directly from the `main` branch on push.
+---
 
-## Linting & Formatting
-
-Pre-commit hooks run markdownlint and yamllint on Markdown/YAML files. Commitlint enforces Conventional Commits:
-```bash
-npx commitlint --from HEAD~1
-```
-
-## Architecture & Key Directories
+## 3. Architecture & Key Directories
 
 ```
 gencr-ft.github.io/
-  index.html      — landing page (English, edit here for content updates)
-  _config.yml     — Jekyll theme config (tactile)
-  README.md       — repo documentation
+  index.html            — landing page (English, main content updates)
+  _config.yml           — Jekyll theme config
+  project-state.json    — Unified Active Contract metadata
+  scripts/
+    validate_html.py    — Python-based HTML parser validator
+    verify-contracts.sh — Programmatic contract validator
 ```
 
-## CI/CD & Required Checks
+---
 
-SSoT compliance workflow validates frontmatter on Markdown files on push/PR.
+## 4. Governance & Constraints
 
-## Commit & PR Conventions
-
-- Conventional Commits v1.0.0 — enforced by commitlint.
-- Branch naming: `feat/`, `fix/`, `docs/`, `chore/`.
-- Every PR requires a linked GitHub Issue.
-- AI commits: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
-
-## Notes for Agents
-
-- Site language must be **English only**.
-- Keep content consistent with the studio's public messaging — no internal roadmap, financial, or confidential information in `index.html`.
-- All Markdown files must carry valid SSoT YAML frontmatter.
-- Do not add build tooling (webpack, npm scripts, etc.) without an ADR or explicit instruction.
-
-## Gap Protocol
-
-Any gap, defect, or action item found while working in this repo **must become a GitHub Issue before proceeding** — nothing lives only in conversation context or memory.
-
-```bash
-# Route: governance and studio-wide items → gcs-project-management
-gh issue create --repo GenCr-ft/gcs-project-management \
-  --title "[gencr-ft.github.io] Short description of the gap" \
-  --body "## Summary
-
-## Evidence
-
-## Ref
-ENG-BACK-NNN (if known)"
-
-# Immediately add to Project #16:
-gh project item-add 16 --owner GenCr-ft --url <issue-url>
-```
-
-Full routing table: workspace `AGENTS.md §9 — Gap Identification Protocol`.
+- **Language**: English only across all files. No other language comments (e.g. no French in configuration comments).
+- **CI/CD Integration**: Strict linter gates (`continue-on-error: false`) run on every PR/push.
+- **Commit & PR Conventions**: Enforced by commitlint. Branches must conform strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug`.
+- **Gap Protocol Reference**: All issues must be logged immediately. Refer to the canonical workspace [Gap Identification Protocol](file:///home/lgan/hxgn/dev/claude/exp/AGENTS.md#9-gap-identification-protocol) for routing and Project #16 updates.
+- **Co-author trailer**: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
