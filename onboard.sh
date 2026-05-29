@@ -19,10 +19,9 @@ fi
 # Ensure pre-commit is installed
 if ! command -v pre-commit &>/dev/null; then
   echo "⚠️  pre-commit not found. Installing..."
-  pip install --user pre-commit || echo "Please install pre-commit manually: pip install pre-commit"
-else
-  echo "✓ pre-commit is installed."
-  pre-commit install --install-hooks
+  pip install --user pre-commit || { echo "Please install pre-commit manually: pip install pre-commit" >&2; exit 1; }
 fi
+echo "✓ pre-commit is installed."
+pre-commit install --install-hooks
 
 echo "🎉 Onboarding complete! Run ./test.sh to verify contracts."

@@ -5,7 +5,7 @@ version: 1.0.0
 authors:
 - GenCr@ft Studio
 creation_date: '2026-05-25'
-last_updated_date: '2026-05-25'
+last_updated_date: 2026-05-29
 language: en
 summary: Authoritative onboarding and workspace contract pointers for AI agents in gencr-ft.github.io.
 metadata:
@@ -26,8 +26,8 @@ metadata:
 Public GitHub Pages landing site for GenCr@ft Studio, served at `https://gencr-ft.github.io`.
 - **Stack**: Static Jekyll (tactile theme).
 - **Status**: Active development.
-- **Unified Contract**: [project-state.json](file:///home/lgan/hxgn/dev/claude/exp/gencr-ft.github.io/project-state.json)
-- **Active Validator**: [scripts/verify-contracts.sh](file:///home/lgan/hxgn/dev/claude/exp/gencr-ft.github.io/scripts/verify-contracts.sh)
+- **Unified Contract**: [project-state.json](project-state.json)
+- **Active Validator**: [scripts/verify-contracts.sh](scripts/verify-contracts.sh)
 
 ---
 
@@ -62,5 +62,5 @@ gencr-ft.github.io/
 - **Language**: English only across all files. No other language comments (e.g. no French in configuration comments).
 - **CI/CD Integration**: Strict linter gates (`continue-on-error: false`) run on every PR/push.
 - **Commit & PR Conventions**: Enforced by commitlint. Branches must conform strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug`.
-- **Gap Protocol Reference**: All issues must be logged immediately. Refer to the canonical workspace [Gap Identification Protocol](file:///home/lgan/hxgn/dev/claude/exp/AGENTS.md#9-gap-identification-protocol) for routing and Project #16 updates.
+- **Gap Protocol Reference**: All issues must be logged immediately and added to Project #16.
 - **Co-author trailer**: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.

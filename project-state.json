@@ -17,8 +17,7 @@
       "type": "compliance-validation",
       "targets": [
         "README.md",
-        "AGENTS.md",
-        "_AUDIT_ANALYSIS.md"
+        "AGENTS.md"
       ]
     },
     "jekyll-config": {
