@@ -35,6 +35,42 @@ knowledgeGuardian: "Édouard (GCT-DVO-DVSST-001)"
 
 > Public GitHub Pages site for GenCr@ft Studio, accessible at [https://gencr-ft.github.io](https://gencr-ft.github.io).
 
+## Start Here
+
+`AGENTS.md` is the repo-local authority and the first read for agents.
+
+`index.html` is the main content surface. `project-state.json` is the unified
+contract metadata. Use the validators in `scripts/` to check site contracts and
+HTML before proposing changes.
+
+## Surface Map
+
+| Surface | Role | Notes |
+| --- | --- | --- |
+| `AGENTS.md` | Repo authority | First read for any contributor or agent |
+| `README.md` | Human-facing summary | Quick orientation only |
+| `index.html` | Main site content | The public landing page |
+| `_config.yml` | Jekyll config | Theme and site settings |
+| `project-state.json` | Active contract metadata | Unified site contract source |
+| `scripts/verify-contracts.sh` | Contract validator | Programmatic validator |
+| `scripts/validate_html.py` | HTML validator | Checks site HTML structure |
+
+## Command Matrix
+
+| Task | Command | Result |
+| --- | --- | --- |
+| Onboard | `bash ./onboard.sh` | Installs local dependencies / checks |
+| Test | `bash ./test.sh` | Runs the repo test suite |
+| Preview locally | `python3 -m http.server 8080` | Serves the site for browser preview |
+| Validate contracts | `bash scripts/verify-contracts.sh` | Runs the active contract validator |
+| Validate HTML | `python3 scripts/validate_html.py` | Checks the site HTML |
+
+## Generated / No-Edit Surfaces
+
+- `project-state.json` is contract metadata; update it through the approved flow.
+- Generated or compiled site artifacts should not be edited directly.
+- Keep the README as navigation, and edit `index.html` for actual site content.
+
 ## Overview
 
 This repository hosts the external-facing website for GenCr@ft Studio. It is a static site served via GitHub Pages, currently presenting a placeholder landing page while the studio is in early development.
