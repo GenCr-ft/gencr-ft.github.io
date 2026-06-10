@@ -121,7 +121,7 @@ repos:
     rev: e180b7d11f94efadbcaaa5064b37961852dbb653  # pragma: allowlist secret
     hooks:
       - id: metadata-linter
-        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|\.github/|AGENTS\.md|README\.md)
+        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|\.github/|AGENTS\.md)
       - id: naming-linter
         exclude: *ssot_exclude
       - id: link-linter
