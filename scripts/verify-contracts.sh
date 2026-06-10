@@ -39,17 +39,17 @@ validate_frontmatter() {
     echo "❌ Error: Required file $filepath does not exist!" >&2
     exit 1
   fi
-  
+
   if ! head -n 1 "$filepath" | grep -q "^---$"; then
     echo "❌ Error: $filepath must start with YAML frontmatter delimiter '---'" >&2
     exit 1
   fi
-  
+
   if ! grep -q "^docId:" "$filepath"; then
     echo "❌ Error: $filepath is missing non-negotiable 'docId' in frontmatter" >&2
     exit 1
   fi
-  
+
   if ! grep -q "^title:" "$filepath"; then
     echo "❌ Error: $filepath is missing 'title' in frontmatter" >&2
     exit 1
