@@ -10,7 +10,7 @@ creation_date: '2026-04-28'
 language: en
 summary: Public GitHub Pages site for GenCr@ft Studio, serving as the external web
   presence at https://gencr-ft.github.io.
-last_updated_date: '2026-05-20'
+last_updated_date: '2026-06-13'
 metadata:
   lifecycle-stage: draft
   keywords:
@@ -80,7 +80,7 @@ This repository hosts the external-facing website for GenCr@ft Studio. It is a s
 ### Files
 
 - `index.html`: The main landing page (English).
-- `_config.yml`: Jekyll configuration (theme: tactile).
+- `_config.yml`: Jekyll configuration (no theme; `index.html` uses `layout: null`).
 - `README.md`: This document.
 
 ## Getting Started
