@@ -5,7 +5,7 @@ version: 1.0.0
 authors:
 - GenCr@ft Studio
 creation_date: '2026-05-25'
-last_updated_date: 2026-05-29
+last_updated_date: '2026-06-13'
 language: en
 summary: Authoritative onboarding and workspace contract pointers for AI agents in gencr-ft.github.io.
 metadata:
@@ -24,7 +24,7 @@ metadata:
 ## 1. Project Overview & Active State
 
 Public GitHub Pages landing site for GenCr@ft Studio, served at `https://gencr-ft.github.io`.
-- **Stack**: Static Jekyll (tactile theme).
+- **Stack**: Static Jekyll (no theme; `index.html` sets `layout: null` and is self-contained HTML/CSS).
 - **Status**: Active development.
 - **Unified Contract**: [project-state.json](project-state.json)
 - **Active Validator**: [scripts/verify-contracts.sh](scripts/verify-contracts.sh)
@@ -48,7 +48,7 @@ Public GitHub Pages landing site for GenCr@ft Studio, served at `https://gencr-f
 ```
 gencr-ft.github.io/
   index.html            — landing page (English, main content updates)
-  _config.yml           — Jekyll theme config
+  _config.yml           — Jekyll build config (no theme)
   project-state.json    — Unified Active Contract metadata
   scripts/
     validate_html.py    — Python-based HTML parser validator
