@@ -31,6 +31,25 @@ else
   exit 1
 fi
 
+echo "🔍 Validating newcomer onboarding content..."
+required_content=(
+  "bash gft-onboarding.sh --quickstart --workspace"
+  "aethel"
+  "evai-platform"
+  "agent-factory"
+  "workspace-ops"
+  "studio-gencraft"
+  "gcd-onboarding-scripts"
+)
+
+for expected in "${required_content[@]}"; do
+  if ! grep -q "$expected" "$REPO_ROOT/index.html"; then
+    echo "❌ Error: index.html is missing newcomer onboarding content: $expected" >&2
+    exit 1
+  fi
+done
+echo "✓ index.html exposes the newcomer onboarding path."
+
 # 3. Check Frontmatter on markdown files
 echo "🔍 Validating SSoT Frontmatter on markdown files..."
 validate_frontmatter() {
