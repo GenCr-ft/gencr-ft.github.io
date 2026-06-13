@@ -292,16 +292,16 @@ layout: null
                 <article class="command">
                     <h3>Linux, macOS, or WSL</h3>
                     <pre><code>mkdir -p ~/gft &amp;&amp; cd ~/gft
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-sha256sum --check gft-onboarding.sh.sha256 &amp;&amp; bash gft-onboarding.sh --quickstart --workspace aethel</code></pre>
+curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
+cd gcd-onboarding-scripts-main
+bash gft-onboarding.sh --quickstart --workspace aethel</code></pre>
                 </article>
                 <article class="command">
                     <h3>Windows PowerShell with WSL2</h3>
-                    <pre><code>mkdir $env:USERPROFILE\gft; cd $env:USERPROFILE\gft
-curl.exe -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.\onboarding-win.ps1 -Quickstart -Workspace aethel</code></pre>
+                    <pre><code>New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft
+Invoke-WebRequest https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.zip -OutFile onboarding.zip
+Expand-Archive .\onboarding.zip -DestinationPath . -Force; cd gcd-onboarding-scripts-main
+powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Workspace aethel</code></pre>
                 </article>
             </div>
         </section>
