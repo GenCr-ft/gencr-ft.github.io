@@ -144,6 +144,20 @@ layout: null
             color: var(--muted);
         }
 
+        .prereq-list {
+            max-width: 820px;
+            margin: 0;
+            padding: 0 0 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .prereq-list li {
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
         .command-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -285,6 +299,25 @@ layout: null
     </header>
 
     <main class="wrap">
+        <section id="prerequisites">
+            <h2>Before you start</h2>
+            <p class="section-lead">You need two things before running the quickstart. The onboarding script checks everything else and guides you through any missing tools.</p>
+            <ol class="prereq-list">
+                <li>
+                    <strong>A GitHub account and GenCr-ft org membership.</strong>
+                    The script clones repositories from the GenCr-ft org.
+                    If you have not been added yet, ask your team lead or request access at
+                    <a href="https://github.com/orgs/GenCr-ft/discussions">github.com/orgs/GenCr-ft/discussions</a>.
+                </li>
+                <li>
+                    <strong>A terminal with <code>bash</code> and <code>curl</code>.</strong>
+                    Linux, macOS, and WSL2 on Windows all qualify.
+                    The script detects your package manager and installs everything else,
+                    asking your permission before each step.
+                </li>
+            </ol>
+        </section>
+
         <section id="quickstart">
             <h2>Quickstart</h2>
             <p class="section-lead">Pick the workspace you were assigned. If nobody assigned one yet, start with <code>aethel</code> to see the product path.</p>
