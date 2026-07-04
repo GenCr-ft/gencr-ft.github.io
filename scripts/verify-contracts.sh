@@ -31,17 +31,14 @@ else
   exit 1
 fi
 
-echo "🔍 Validating newcomer onboarding content..."
+echo "🔍 Validating newcomer onboarding content (ENG-ADR-087 one-liner + 4 canonical workspaces)..."
 required_content=(
-  "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz"
-  "gcd-onboarding-scripts/archive/refs/heads/main.zip"
-  "bash gft-onboarding.sh --quickstart --workspace"
-  "aethel"
-  "evai-platform"
-  "agent-factory"
-  "workspace-ops"
-  "studio-gencraft"
+  "curl -fsSL https://gencr-ft.github.io/onboard.sh"
   "gcd-onboarding-scripts"
+  "aethel"
+  "gft-platform"
+  "onboarding"
+  "agent-ecosystem"
 )
 
 for expected in "${required_content[@]}"; do
@@ -51,17 +48,34 @@ for expected in "${required_content[@]}"; do
   fi
 done
 
-if grep -q "raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh" "$REPO_ROOT/index.html"; then
-  echo "❌ Error: index.html advertises the non-runnable standalone bash script download." >&2
+# The private-repo tarball/zip download is the bug fixed by #26 — it must NOT return.
+forbidden_content=(
+  "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz"
+  "gcd-onboarding-scripts/archive/refs/heads/main.zip"
+  "raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh"
+)
+for forbidden in "${forbidden_content[@]}"; do
+  if grep -q "$forbidden" "$REPO_ROOT/index.html"; then
+    echo "❌ Error: index.html still references the private-repo download that 404s for newcomers: $forbidden" >&2
+    exit 1
+  fi
+done
+
+echo "✓ index.html exposes the working one-line onboarding path."
+
+# The public bootstrap must exist, be valid bash, and pass its unit tests.
+echo "🔍 Validating public onboarding bootstrap (onboard.sh)..."
+if [ ! -f "$REPO_ROOT/onboard.sh" ]; then
+  echo "❌ Error: onboard.sh (public bootstrap) is missing!" >&2
   exit 1
 fi
-
-if grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$REPO_ROOT/index.html"; then
-  echo "❌ Error: index.html assumes git is installed before onboarding starts." >&2
+bash -n "$REPO_ROOT/onboard.sh" || { echo "❌ Error: onboard.sh has a syntax error." >&2; exit 1; }
+if grep -qiE 'ghp_|github_pat_|-----BEGIN|token=' "$REPO_ROOT/onboard.sh"; then
+  echo "❌ Error: onboard.sh appears to contain a secret/token (ENG-ADR-087 forbids this)." >&2
   exit 1
 fi
-
-echo "✓ index.html exposes the newcomer onboarding path."
+bash "$REPO_ROOT/scripts/test_onboard.sh" || { echo "❌ Error: onboard.sh unit tests failed." >&2; exit 1; }
+echo "✓ public bootstrap onboard.sh is valid, secretless, and unit-tested."
 
 # 3. Check Frontmatter on markdown files
 echo "🔍 Validating SSoT Frontmatter on markdown files..."
