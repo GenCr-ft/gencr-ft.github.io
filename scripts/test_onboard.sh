@@ -33,12 +33,22 @@ BOOTSTRAP_WORKSPACE=""
 parse_args --workspace=aethel
 [[ "$BOOTSTRAP_WORKSPACE" == "aethel" ]] || { echo "FAIL: --workspace=aethel not parsed (got '$BOOTSTRAP_WORKSPACE')"; ((failed++)); }
 
-# 3. Pinned ref default + override
+# 3. Pinned ref default + override (must be a pinned tag, never a moving branch)
 unset GFT_ONBOARDING_REF
-[[ "$(onboarding_ref)" == "main" ]] || { echo "FAIL: default onboarding_ref should be 'main' (got '$(onboarding_ref)')"; ((failed++)); }
+default_ref="$(onboarding_ref)"
+[[ "$default_ref" == onboarding-v* ]] || { echo "FAIL: default onboarding_ref must be a pinned onboarding-v* tag (got '$default_ref')"; ((failed++)); }
+[[ "$default_ref" != "main" && "$default_ref" != "HEAD" ]] || { echo "FAIL: default onboarding_ref must not be a moving branch"; ((failed++)); }
 export GFT_ONBOARDING_REF="onboarding-v1.2.3"
 [[ "$(onboarding_ref)" == "onboarding-v1.2.3" ]] || { echo "FAIL: GFT_ONBOARDING_REF override ignored"; ((failed++)); }
 unset GFT_ONBOARDING_REF
+
+# 3b. Ref safety (argument-injection guard)
+for good in onboarding-v1.0.0 main feature/x abc123; do
+  is_safe_ref "$good" || { echo "FAIL: is_safe_ref rejected safe ref '$good'"; ((failed++)); }
+done
+for bad in "--upload-pack=x" "-x" "" "a;b" 'a$(x)' "a b"; do
+  if is_safe_ref "$bad"; then echo "FAIL: is_safe_ref accepted unsafe ref '$bad'"; ((failed++)); fi
+done
 
 # 4. Package manager detection returns a known value
 pm="$(detect_pkg_mgr)"

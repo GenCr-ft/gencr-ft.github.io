@@ -26,7 +26,19 @@ warn() { printf '\033[0;33m[onboard]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[0;31m[onboard]\033[0m %s\n' "$*" >&2; exit 1; }
 
 projects_home() { printf '%s' "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"; }
-onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-main}"; }
+# Pinned release tag — the sole trust anchor between this public shim and the
+# orchestrator (ENG-ADR-087). NEVER defaults to a moving branch. Advancing the
+# pin is a deliberate, reviewed change to this file.
+onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.0}"; }
+
+# Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
+is_safe_ref() {
+  case "${1:-}" in
+    -*|"") return 1 ;;
+    *[!A-Za-z0-9._/-]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
 
 is_canonical_workspace() {
   case "${1:-}" in
@@ -92,7 +104,8 @@ ensure_gh_auth() {
     return 0
   fi
   log "Authenticating with GitHub (device flow — you will get a one-time code)…"
-  gh auth login --hostname github.com --git-protocol https --web \
+  # Least-privilege: clone-only bootstrap needs repo read + org membership, not workflow/admin.
+  gh auth login --hostname github.com --git-protocol https --scopes "repo,read:org" --web \
     || die "GitHub authentication failed. Re-run after 'gh auth login'."
 }
 
@@ -100,11 +113,16 @@ ensure_gh_auth() {
 clone_orchestrator() {
   local home ref dest
   home="$(projects_home)"; ref="$(onboarding_ref)"; dest="$home/gcd-onboarding-scripts"
+  is_safe_ref "$ref" || die "Refusing unsafe GFT_ONBOARDING_REF '$ref'."
   mkdir -p "$home"
   if [ -d "$dest/.git" ]; then
     log "Refreshing existing onboarding clone at $dest (ref $ref)…"
-    git -C "$dest" fetch --quiet origin "$ref" 2>/dev/null || warn "fetch failed; using existing checkout"
-    git -C "$dest" checkout --quiet "$ref" 2>/dev/null || true
+    git -C "$dest" fetch --quiet origin "$ref" 2>/dev/null || warn "fetch of '$ref' failed; will verify local ref"
+    # Fail-closed: the exact pinned ref must be checked out, else stop (never run stale code).
+    git -C "$dest" checkout --quiet "$ref" 2>/dev/null \
+      || die "Cannot check out pinned ref '$ref' in $dest. Remove $dest and re-run."
+    git -C "$dest" rev-parse --verify --quiet "${ref}^{commit}" >/dev/null \
+      || die "Pinned ref '$ref' does not resolve to a commit in $dest."
   else
     log "Cloning $ONBOARDING_REPO@$ref → $dest"
     gh repo clone "$ONBOARDING_REPO" "$dest" -- --branch "$ref" --depth 1 \
@@ -140,7 +158,7 @@ parse_args() {
       --workspace)   BOOTSTRAP_WORKSPACE="${2:-}"; shift 2 ;;
       --workspace=*) BOOTSTRAP_WORKSPACE="${1#*=}"; shift ;;
       -h|--help)     printf 'Usage: onboard.sh [--workspace <id>]\nWorkspaces:\n'; print_workspaces; return 0 ;;
-      *)             shift ;;
+      *)             warn "Unknown argument: $1"; printf 'Usage: onboard.sh [--workspace <id>]\nWorkspaces:\n' >&2; print_workspaces >&2; die "Unrecognized flag '$1'." ;;
     esac
   done
 }
