@@ -319,21 +319,20 @@ layout: null
 
         <section id="quickstart">
             <h2>Quickstart</h2>
-            <p class="section-lead">Pick the workspace you were assigned. If nobody assigned one yet, start with <code>aethel</code> to see the product path.</p>
+            <p class="section-lead">One command. It installs prerequisites, signs you in to GitHub (one-time device code), clones the tools, and sets up your workspace. If nobody assigned one yet, start with <code>aethel</code>.</p>
             <div class="command-grid">
                 <article class="command">
                     <h3>Linux, macOS, or WSL</h3>
-                    <pre><code>mkdir -p ~/gft &amp;&amp; cd ~/gft
-curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
-cd gcd-onboarding-scripts-main
-bash gft-onboarding.sh --quickstart --workspace aethel</code></pre>
+                    <pre><code># Interactive — pick your workspace when prompted:
+curl -fsSL https://gencr-ft.github.io/onboard.sh | bash
+
+# Or name the workspace up front (non-interactive):
+curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel</code></pre>
                 </article>
                 <article class="command">
-                    <h3>Windows PowerShell with WSL2</h3>
-                    <pre><code>New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft
-Invoke-WebRequest https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.zip -OutFile onboarding.zip
-Expand-Archive .\onboarding.zip -DestinationPath . -Force; cd gcd-onboarding-scripts-main
-powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Workspace aethel</code></pre>
+                    <h3>Windows (PowerShell with WSL2)</h3>
+                    <pre><code># In your WSL2 Ubuntu shell, run the same one-liner:
+curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel</code></pre>
                 </article>
             </div>
         </section>
@@ -347,20 +346,16 @@ powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Works
                     <p>Game client, authoritative server, PCG, authentication, persistence, and Aethel backlog work.</p>
                 </article>
                 <article class="workspace">
-                    <h3>evai-platform</h3>
-                    <p>EvolvAI DevSphere CLI, platform services, platform architecture, and developer tooling.</p>
+                    <h3>gft-platform</h3>
+                    <p>Platform CLI and architecture, studio governance, handbooks, security, legal, project management, and this website.</p>
                 </article>
                 <article class="workspace">
-                    <h3>agent-factory</h3>
+                    <h3>onboarding</h3>
+                    <p>CI, onboarding automation, governance linters, shared GitHub Actions, and infrastructure.</p>
+                </article>
+                <article class="workspace">
+                    <h3>agent-ecosystem</h3>
                     <p>Gem operations, agent blueprints, skills, prompts, communication protocols, and automation.</p>
-                </article>
-                <article class="workspace">
-                    <h3>workspace-ops</h3>
-                    <p>CI, onboarding, governance linters, shared GitHub Actions, and infrastructure automation.</p>
-                </article>
-                <article class="workspace">
-                    <h3>studio-gencraft</h3>
-                    <p>Studio governance, handbook, legal, security, project management, and this public website.</p>
                 </article>
             </div>
         </section>

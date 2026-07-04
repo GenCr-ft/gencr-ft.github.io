@@ -1,27 +1,186 @@
 #!/usr/bin/env bash
 # ===================================================================
-# GenCr@ft Studio - Onboarding Script v1.0
-# Idempotent setup for gencr-ft.github.io workspace
+# GenCr@ft Studio — one-line onboarding bootstrap (ENG-ADR-087)
+#
+# Public entry point:
+#   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash
+# Non-interactive / CI:
+#   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace <id>
+#
+# Thin, secretless shim (Approach A): installs prerequisites, authenticates via
+# GitHub CLI device flow, clones the pinned gcd-onboarding-scripts orchestrator,
+# and hands off to gft-onboarding.sh. All heavy install/config logic lives in
+# the orchestrator; the global `gft` CLI is installed by gcs-plt-tools (single
+# owner). This script contains NO secrets.
+#
+# Workspaces: aethel | gft-platform | onboarding | agent-ecosystem
+# Env: GFT_PROJECTS_HOME (default ~/gft_studio), GFT_ONBOARDING_REF (pinned ref,
+#      default "main" until the first onboarding-vX.Y.Z release tag is cut).
 # ===================================================================
-set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$REPO_ROOT"
+ONBOARDING_REPO="GenCr-ft/gcd-onboarding-scripts"
+BOOTSTRAP_WORKSPACE=""
 
-echo "=== Onboarding gencr-ft.github.io ==="
+log()  { printf '\033[0;34m[onboard]\033[0m %s\n' "$*"; }
+warn() { printf '\033[0;33m[onboard]\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[0;31m[onboard]\033[0m %s\n' "$*" >&2; exit 1; }
 
-# Check Python 3
-if ! command -v python3 &>/dev/null; then
-  echo "✗ Python 3 is required but not installed." >&2
-  exit 1
+projects_home() { printf '%s' "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"; }
+onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-main}"; }
+
+is_canonical_workspace() {
+  case "${1:-}" in
+    aethel|gft-platform|onboarding|agent-ecosystem) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+print_workspaces() { printf '  %s\n' aethel gft-platform onboarding agent-ecosystem; }
+
+detect_pkg_mgr() {
+  if command -v apt-get >/dev/null 2>&1; then echo apt
+  elif command -v dnf >/dev/null 2>&1; then echo dnf
+  elif command -v brew >/dev/null 2>&1; then echo brew
+  elif command -v pacman >/dev/null 2>&1; then echo pacman
+  else echo unknown; fi
+}
+
+pkg_install() {
+  local pkg="$1" pm
+  pm="$(detect_pkg_mgr)"
+  case "$pm" in
+    apt)    sudo apt-get update -qq && sudo apt-get install -y "$pkg" ;;
+    dnf)    sudo dnf install -y "$pkg" ;;
+    brew)   brew install "$pkg" ;;
+    pacman) sudo pacman -S --noconfirm "$pkg" ;;
+    *)      return 1 ;;
+  esac
+}
+
+ensure_cmd() {
+  local cmd="$1" pkg="${2:-$1}"
+  command -v "$cmd" >/dev/null 2>&1 && return 0
+  log "Installing missing prerequisite: $cmd"
+  pkg_install "$pkg" || die "Could not install '$cmd' automatically. Install it and re-run."
+}
+
+# GitHub CLI needs a dedicated apt repo on Debian/Ubuntu; other managers ship it.
+ensure_gh() {
+  command -v gh >/dev/null 2>&1 && return 0
+  log "Installing GitHub CLI (gh)…"
+  case "$(detect_pkg_mgr)" in
+    apt)
+      sudo mkdir -p -m 755 /etc/apt/keyrings
+      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+      sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+      sudo apt-get update -qq && sudo apt-get install -y gh ;;
+    dnf)    sudo dnf install -y gh ;;
+    brew)   brew install gh ;;
+    pacman) sudo pacman -S --noconfirm github-cli ;;
+    *)      die "Install GitHub CLI manually: https://github.com/cli/cli#installation, then re-run." ;;
+  esac
+  command -v gh >/dev/null 2>&1 || die "GitHub CLI install failed. See https://github.com/cli/cli#installation"
+}
+
+# Interactive device-flow login. No secrets are stored by this script.
+ensure_gh_auth() {
+  if gh auth status >/dev/null 2>&1; then
+    log "GitHub CLI already authenticated."
+    return 0
+  fi
+  log "Authenticating with GitHub (device flow — you will get a one-time code)…"
+  gh auth login --hostname github.com --git-protocol https --web \
+    || die "GitHub authentication failed. Re-run after 'gh auth login'."
+}
+
+# Clone (or refresh) the orchestrator at the pinned ref. Idempotent.
+clone_orchestrator() {
+  local home ref dest
+  home="$(projects_home)"; ref="$(onboarding_ref)"; dest="$home/gcd-onboarding-scripts"
+  mkdir -p "$home"
+  if [ -d "$dest/.git" ]; then
+    log "Refreshing existing onboarding clone at $dest (ref $ref)…"
+    git -C "$dest" fetch --quiet origin "$ref" 2>/dev/null || warn "fetch failed; using existing checkout"
+    git -C "$dest" checkout --quiet "$ref" 2>/dev/null || true
+  else
+    log "Cloning $ONBOARDING_REPO@$ref → $dest"
+    gh repo clone "$ONBOARDING_REPO" "$dest" -- --branch "$ref" --depth 1 \
+      || die "Clone failed. Ensure your GitHub account has access to $ONBOARDING_REPO."
+  fi
+  printf '%s' "$dest"
+}
+
+build_handoff_cmd() {
+  printf 'bash gft-onboarding.sh --quickstart --workspace %s' "$1"
+}
+
+# Echoes the chosen workspace, or empty string for the safe non-interactive default.
+select_workspace() {
+  if [ -n "$BOOTSTRAP_WORKSPACE" ]; then printf '%s' "$BOOTSTRAP_WORKSPACE"; return 0; fi
+  if [ -r /dev/tty ] && [ -t 1 ]; then
+    {
+      printf 'Select a workspace:\n'
+      print_workspaces
+      printf 'Workspace [aethel]: '
+    } >/dev/tty
+    local choice=""
+    read -r choice </dev/tty || choice=""
+    printf '%s' "${choice:-aethel}"
+  else
+    printf ''
+  fi
+}
+
+parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --workspace)   BOOTSTRAP_WORKSPACE="${2:-}"; shift 2 ;;
+      --workspace=*) BOOTSTRAP_WORKSPACE="${1#*=}"; shift ;;
+      -h|--help)     printf 'Usage: onboard.sh [--workspace <id>]\nWorkspaces:\n'; print_workspaces; return 0 ;;
+      *)             shift ;;
+    esac
+  done
+}
+
+main() {
+  set -euo pipefail
+  parse_args "$@"
+  log "GenCr@ft Studio onboarding bootstrap"
+
+  ensure_cmd git git
+  ensure_cmd curl curl
+  ensure_gh
+  ensure_cmd python3 python3
+  ensure_gh_auth
+
+  local ws; ws="$(select_workspace)"
+  if [ -n "$ws" ] && ! is_canonical_workspace "$ws"; then
+    warn "Unknown workspace '$ws'. Valid workspaces:"
+    print_workspaces >&2
+    die "Choose one of the four canonical workspaces."
+  fi
+
+  local dest; dest="$(clone_orchestrator)"
+  cd "$dest"
+
+  if [ -z "$ws" ]; then
+    log "No workspace selected (non-interactive). Prerequisites and the orchestrator are ready."
+    log "Re-run with a workspace to finish setup, e.g.:"
+    log "  curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel"
+    log "Workspaces:"
+    print_workspaces
+    exit 0
+  fi
+
+  log "Handing off to the onboarding orchestrator for workspace '$ws'…"
+  exec bash gft-onboarding.sh --quickstart --workspace "$ws"
+}
+
+# Library guard: tests source this file with GFT_BOOTSTRAP_LIB=1 to assert
+# individual functions without executing the bootstrap.
+if [ "${GFT_BOOTSTRAP_LIB:-0}" != "1" ]; then
+  main "$@"
 fi
-
-# Ensure pre-commit is installed
-if ! command -v pre-commit &>/dev/null; then
-  echo "⚠️  pre-commit not found. Installing..."
-  pip install --user pre-commit || { echo "Please install pre-commit manually: pip install pre-commit" >&2; exit 1; }
-fi
-echo "✓ pre-commit is installed."
-pre-commit install --install-hooks
-
-echo "🎉 Onboarding complete! Run ./test.sh to verify contracts."
