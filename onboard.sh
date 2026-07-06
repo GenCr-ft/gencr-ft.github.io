@@ -21,15 +21,19 @@
 ONBOARDING_REPO="GenCr-ft/gcd-onboarding-scripts"
 BOOTSTRAP_WORKSPACE=""
 
-log()  { printf '\033[0;34m[onboard]\033[0m %s\n' "$*"; }
+# All human-facing logging goes to STDERR so that functions which "return" a value
+# via stdout (e.g. clone_orchestrator, select_workspace) are never polluted when
+# captured with $(...). Regression guard: scripts/test_onboard.sh checks 7 & 8.
+log()  { printf '\033[0;34m[onboard]\033[0m %s\n' "$*" >&2; }
 warn() { printf '\033[0;33m[onboard]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[0;31m[onboard]\033[0m %s\n' "$*" >&2; exit 1; }
+ok()   { printf '\033[0;32m[onboard]\033[0m %s\n' "$*" >&2; }
 
 projects_home() { printf '%s' "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"; }
 # Pinned release tag — the sole trust anchor between this public shim and the
 # orchestrator (ENG-ADR-087). NEVER defaults to a moving branch. Advancing the
 # pin is a deliberate, reviewed change to this file.
-onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.0}"; }
+onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.1}"; }
 
 # Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
 is_safe_ref() {
@@ -119,14 +123,15 @@ clone_orchestrator() {
     log "Refreshing existing onboarding clone at $dest (ref $ref)…"
     git -C "$dest" fetch --quiet origin "$ref" 2>/dev/null || warn "fetch of '$ref' failed; will verify local ref"
     # Fail-closed: the exact pinned ref must be checked out, else stop (never run stale code).
-    git -C "$dest" checkout --quiet "$ref" 2>/dev/null \
+    git -C "$dest" -c advice.detachedHead=false checkout --quiet "$ref" 2>/dev/null \
       || die "Cannot check out pinned ref '$ref' in $dest. Remove $dest and re-run."
     git -C "$dest" rev-parse --verify --quiet "${ref}^{commit}" >/dev/null \
       || die "Pinned ref '$ref' does not resolve to a commit in $dest."
   else
-    log "Cloning $ONBOARDING_REPO@$ref → $dest"
-    gh repo clone "$ONBOARDING_REPO" "$dest" -- --branch "$ref" --depth 1 \
-      || die "Clone failed. Ensure your GitHub account has access to $ONBOARDING_REPO."
+    log "Fetching the onboarding toolkit (pinned $ref)…"
+    gh repo clone "$ONBOARDING_REPO" "$dest" -- \
+        --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
+      || die "Download failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
   fi
   printf '%s' "$dest"
 }
@@ -138,7 +143,10 @@ build_handoff_cmd() {
 # Echoes the chosen workspace, or empty string for the safe non-interactive default.
 select_workspace() {
   if [ -n "$BOOTSTRAP_WORKSPACE" ]; then printf '%s' "$BOOTSTRAP_WORKSPACE"; return 0; fi
-  if [ -r /dev/tty ] && [ -t 1 ]; then
+  # Prompt only when /dev/tty can actually be opened for read AND write. This works
+  # under `curl | bash` (stdin is the pipe, so `[ -t 0/1 ]` are unreliable) and stays
+  # quiet in true non-interactive contexts where /dev/tty exists but can't be opened.
+  if { : >/dev/tty; } 2>/dev/null && { : </dev/tty; } 2>/dev/null; then
     {
       printf 'Select a workspace:\n'
       print_workspaces
@@ -182,19 +190,47 @@ main() {
   fi
 
   local dest; dest="$(clone_orchestrator)"
-  cd "$dest"
+  cd "$dest" || die "Could not enter $dest."
 
   if [ -z "$ws" ]; then
-    log "No workspace selected (non-interactive). Prerequisites and the orchestrator are ready."
-    log "Re-run with a workspace to finish setup, e.g.:"
-    log "  curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel"
-    log "Workspaces:"
-    print_workspaces
+    ok "Prerequisites are installed and the onboarding toolkit is ready."
+    log "To finish setting up a workspace, run one of these (pick the one you were assigned):"
+    local w
+    for w in aethel gft-platform onboarding agent-ecosystem; do
+      log "  curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace $w"
+    done
     exit 0
   fi
 
-  log "Handing off to the onboarding orchestrator for workspace '$ws'…"
-  exec bash gft-onboarding.sh --quickstart --workspace "$ws"
+  log "Setting up your '$ws' workspace — installing the gft CLI, tools, and repositories…"
+  log "(this can take a few minutes on first run)"
+  if bash gft-onboarding.sh --quickstart --workspace "$ws"; then
+    print_success_summary "$ws"
+  else
+    die "Workspace setup hit an error above. Re-run this same command, or share the log with #devops-support."
+  fi
+}
+
+# Friendly, non-technical completion summary printed to stdout at the very end.
+print_success_summary() {
+  local ws="$1" gft_bin="${HOME}/.local/bin/gft" ver=""
+  if [ -x "$gft_bin" ]; then
+    ver="$("$gft_bin" version 2>/dev/null || "$gft_bin" --version 2>/dev/null || true)"
+    ver="$(printf '%s' "$ver" | head -1)"
+  fi
+  printf '\n\033[0;32m✓ GenCr@ft onboarding complete — you are set up.\033[0m\n\n'
+  printf '  Workspace:    %s\n' "$ws"
+  printf '  Your repos:   %s\n' "$(projects_home)"
+  if [ -x "$gft_bin" ]; then
+    printf '  gft CLI:      installed at %s%s\n' "$gft_bin" "${ver:+  ($ver)}"
+  else
+    printf '  gft CLI:      installed (see the messages above for details)\n'
+  fi
+  printf '\n  What to do next:\n'
+  printf '   1. Close and reopen your terminal   (or run:  source ~/.bashrc)\n'
+  printf '   2. Confirm everything is healthy:   gft doctor\n'
+  printf '   3. Explore your repositories in:    %s\n' "$(projects_home)"
+  printf '\n  Questions or something looks off? Ask in #devops-support.\n\n'
 }
 
 # Library guard: tests source this file with GFT_BOOTSTRAP_LIB=1 to assert
