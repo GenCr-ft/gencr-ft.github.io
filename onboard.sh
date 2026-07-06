@@ -119,20 +119,26 @@ clone_orchestrator() {
   home="$(projects_home)"; ref="$(onboarding_ref)"; dest="$home/gcd-onboarding-scripts"
   is_safe_ref "$ref" || die "Refusing unsafe GFT_ONBOARDING_REF '$ref'."
   mkdir -p "$home"
-  if [ -d "$dest/.git" ]; then
-    log "Refreshing existing onboarding clone at $dest (ref $ref)…"
-    git -C "$dest" fetch --quiet origin "$ref" 2>/dev/null || warn "fetch of '$ref' failed; will verify local ref"
-    # Fail-closed: the exact pinned ref must be checked out, else stop (never run stale code).
-    git -C "$dest" -c advice.detachedHead=false checkout --quiet "$ref" 2>/dev/null \
-      || die "Cannot check out pinned ref '$ref' in $dest. Remove $dest and re-run."
-    git -C "$dest" rev-parse --verify --quiet "${ref}^{commit}" >/dev/null \
-      || die "Pinned ref '$ref' does not resolve to a commit in $dest."
-  else
-    log "Fetching the onboarding toolkit (pinned $ref)…"
-    gh repo clone "$ONBOARDING_REPO" "$dest" -- \
-        --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
-      || die "Download failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
+  # Fast path: an existing clone whose HEAD is already the pinned tag's commit —
+  # no network, no re-clone. (Local-only check; safe on shallow clones.)
+  if [ -d "$dest/.git" ] \
+     && git -C "$dest" rev-parse --verify -q "refs/tags/${ref}^{commit}" >/dev/null 2>&1 \
+     && [ "$(git -C "$dest" rev-parse -q HEAD 2>/dev/null)" = "$(git -C "$dest" rev-parse -q "refs/tags/${ref}^{commit}" 2>/dev/null)" ]; then
+    log "Onboarding toolkit already at $ref."
+    printf '%s' "$dest"
+    return 0
   fi
+  # Otherwise — absent, stale/non-git, or a different (older) ref — (re)clone fresh at
+  # the pinned tag. Re-cloning is ~220 KiB and always lands on the exact ref, which
+  # avoids the shallow-clone `git fetch <tag>` pitfall (tag not created locally).
+  if [ -e "$dest" ]; then
+    log "Updating the onboarding toolkit to $ref…"
+    rm -rf "$dest"
+  fi
+  log "Fetching the onboarding toolkit (pinned $ref)…"
+  gh repo clone "$ONBOARDING_REPO" "$dest" -- \
+      --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
+    || die "Download failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
   printf '%s' "$dest"
 }
 
