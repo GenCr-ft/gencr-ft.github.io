@@ -64,6 +64,25 @@ if grep -qiE 'ghp_|github_pat_|-----BEGIN|token=' "$REPO_ROOT/onboard.sh"; then
   echo "FAIL: onboard.sh appears to contain a secret/token"; ((failed++))
 fi
 
+# 7. WI-36 regression: log/warn MUST NOT write to stdout — otherwise they pollute
+# command-substitution returns (e.g. dest="$(clone_orchestrator)") and break `cd`.
+lout="$(log 'probe' 2>/dev/null)"
+[[ -z "$lout" ]] || { echo "FAIL: log() writes to stdout ('$lout') — pollutes \$()-captured returns (the #36 cd crash)"; ((failed++)); }
+wout="$(warn 'probe' 2>/dev/null)"
+[[ -z "$wout" ]] || { echo "FAIL: warn() writes to stdout ('$wout')"; ((failed++)); }
+
+# 8. WI-36: clone_orchestrator's stdout must be ONLY the destination path. Probe the
+# 'existing clone' branch with git stubbed to a no-op, inside an isolated subshell.
+_t="$(mktemp -d)"; mkdir -p "$_t/gcd-onboarding-scripts/.git"
+probe_dest="$(
+  export GFT_PROJECTS_HOME="$_t"
+  git() { return 0; }
+  clone_orchestrator 2>/dev/null
+)"
+[[ "$probe_dest" == "$_t/gcd-onboarding-scripts" ]] \
+  || { echo "FAIL: clone_orchestrator stdout is not a clean path: '$probe_dest'"; ((failed++)); }
+rm -rf "$_t"
+
 if [[ $failed -ne 0 ]]; then
   echo "🔴 test_onboard: $failed check(s) failed."
   exit 1
