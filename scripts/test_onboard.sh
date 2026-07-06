@@ -76,6 +76,7 @@ wout="$(warn 'probe' 2>/dev/null)"
 # 'existing clone' branch with git stubbed to a no-op, inside an isolated subshell.
 _t="$(mktemp -d)"; mkdir -p "$_t/gcd-onboarding-scripts/.git"
 probe_dest="$(
+  # shellcheck disable=SC2030
   export GFT_PROJECTS_HOME="$_t"
   # shellcheck disable=SC2317  # invoked indirectly by clone_orchestrator
   git() { return 0; }
@@ -84,6 +85,26 @@ probe_dest="$(
 [[ "$probe_dest" == "$_t/gcd-onboarding-scripts" ]] \
   || { echo "FAIL: clone_orchestrator stdout is not a clean path: '$probe_dest'"; ((failed++)); }
 rm -rf "$_t"
+
+# 9. WI-38 regression: an existing clone NOT at the pinned ref must be re-cloned
+# (not `git fetch <tag>`+checkout, which fails on shallow clones). Stub git so the
+# fast-path tag check fails, and gh so we can detect the re-clone.
+_t9="$(mktemp -d)"; mkdir -p "$_t9/gcd-onboarding-scripts/.git"
+_clonelog="$_t9/gh.called"
+probe9="$(
+  # shellcheck disable=SC2030,SC2031
+  export GFT_PROJECTS_HOME="$_t9"
+  # shellcheck disable=SC2317
+  git() { return 1; }                                  # fast-path tag verify fails
+  # shellcheck disable=SC2317
+  gh() { echo "gh $*" >>"$_clonelog"; mkdir -p "$_t9/gcd-onboarding-scripts/.git"; }
+  clone_orchestrator 2>/dev/null
+)"
+[[ "$probe9" == "$_t9/gcd-onboarding-scripts" ]] || { echo "FAIL: reclone path returned bad dest: '$probe9'"; ((failed++)); }
+if ! { [[ -f "$_clonelog" ]] && grep -q 'repo clone' "$_clonelog"; }; then
+  echo "FAIL: mismatched ref did not trigger a re-clone (gh repo clone)"; ((failed++))
+fi
+rm -rf "$_t9"
 
 if [[ $failed -ne 0 ]]; then
   echo "🔴 test_onboard: $failed check(s) failed."
