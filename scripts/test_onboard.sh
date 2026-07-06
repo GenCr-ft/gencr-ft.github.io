@@ -46,6 +46,7 @@ unset GFT_ONBOARDING_REF
 for good in onboarding-v1.0.0 main feature/x abc123; do
   is_safe_ref "$good" || { echo "FAIL: is_safe_ref rejected safe ref '$good'"; ((failed++)); }
 done
+# shellcheck disable=SC2016  # single-quoted payloads are literal on purpose (injection probes)
 for bad in "--upload-pack=x" "-x" "" "a;b" 'a$(x)' "a b"; do
   if is_safe_ref "$bad"; then echo "FAIL: is_safe_ref accepted unsafe ref '$bad'"; ((failed++)); fi
 done
@@ -76,6 +77,7 @@ wout="$(warn 'probe' 2>/dev/null)"
 _t="$(mktemp -d)"; mkdir -p "$_t/gcd-onboarding-scripts/.git"
 probe_dest="$(
   export GFT_PROJECTS_HOME="$_t"
+  # shellcheck disable=SC2317  # invoked indirectly by clone_orchestrator
   git() { return 0; }
   clone_orchestrator 2>/dev/null
 )"
