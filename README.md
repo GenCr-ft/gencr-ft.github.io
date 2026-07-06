@@ -10,7 +10,7 @@ creation_date: '2026-04-28'
 language: en
 summary: Public GitHub Pages site for GenCr@ft Studio, serving as the external web
   presence at https://gencr-ft.github.io.
-last_updated_date: '2026-06-13'
+last_updated_date: '2026-07-06'
 metadata:
   lifecycle-stage: draft
   keywords:
@@ -59,7 +59,8 @@ HTML before proposing changes.
 
 | Task | Command | Result |
 | --- | --- | --- |
-| Onboard | `bash ./onboard.sh` | Installs local dependencies / checks |
+| Public studio onboarding (newcomers) | `curl -fsSL https://gencr-ft.github.io/onboard.sh \| bash` | One-line studio bootstrap: prerequisites, `gh` device-login, clones the pinned onboarding orchestrator, sets up your workspace (ENG-ADR-087). Served from this repo's `onboard.sh`. |
+| Local dev setup (this repo's contributors) | `pre-commit install --install-hooks` | Installs this repo's pre-commit hooks. |
 | Test | `bash ./test.sh` | Runs the repo test suite |
 | Preview locally | `python3 -m http.server 8080` | Serves the site for browser preview |
 | Validate contracts | `bash scripts/verify-contracts.sh` | Runs the active contract validator |
