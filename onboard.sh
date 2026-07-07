@@ -33,7 +33,7 @@ projects_home() { printf '%s' "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"; }
 # Pinned release tag — the sole trust anchor between this public shim and the
 # orchestrator (ENG-ADR-087). NEVER defaults to a moving branch. Advancing the
 # pin is a deliberate, reviewed change to this file.
-onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.1}"; }
+onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.2}"; }
 
 # Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
 is_safe_ref() {
