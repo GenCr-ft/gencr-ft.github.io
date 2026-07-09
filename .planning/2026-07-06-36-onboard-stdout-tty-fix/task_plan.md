@@ -2,7 +2,7 @@
 docId: GOV-PLAN-36
 title: "[CODE] Fix onboard.sh cd crash (log→stdout), workspace prompt, and UX"
 status: approved
-issue-id: GenCr-ft/gencr-ft.github.io#36
+issue-id: GenCr-ft/gencr-ft-github-io#36
 ---
 
 ## [CODE] onboard.sh P0 fix (regression of #26)

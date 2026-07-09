@@ -2,7 +2,7 @@
 docId: GOV-PLAN-26
 title: "[CODE] Public onboard.sh bootstrap — device-auth, pinned clone, handoff (ENG-ADR-087)"
 status: approved
-issue-id: GenCr-ft/gencr-ft.github.io#26
+issue-id: GenCr-ft/gencr-ft-github-io#26
 ---
 
 ## [CODE] Public onboarding bootstrap (keystone)

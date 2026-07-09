@@ -2,7 +2,7 @@
 docId: GOV-PLAN-38
 title: "[CODE] onboard.sh reclone-on-ref-mismatch (upgrade re-run fix)"
 status: approved
-issue-id: GenCr-ft/gencr-ft.github.io#38
+issue-id: GenCr-ft/gencr-ft-github-io#38
 ---
 
 ## [CODE] clone_orchestrator: fast-path or re-clone

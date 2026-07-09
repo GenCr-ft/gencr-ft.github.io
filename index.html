@@ -337,6 +337,17 @@ curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel
             </div>
         </section>
 
+        <section id="walking-skeleton">
+            <h2>Local Walking Skeleton Integration</h2>
+            <p class="section-lead">Once your workspace is synced, you can boot the complete authoritative game backend locally in under two minutes.</p>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px;">
+                <p style="margin: 0 0 10px;">Run the canonical entrypoint script from the root directory of your workspace:</p>
+                <pre><code>./run-walking-skeleton.sh</code></pre>
+                <p style="margin: 14px 0 0;">This script performs pre-flight checks, generates RS256 cryptographic keys, starts local Postgres &amp; Redis instances via Docker, builds the authoritative packages (voxel engine), and boots the auth and game server simulation engines.</p>
+                <p style="margin: 10px 0 0;">To connect the Godot client, run <code>../Godot_v4.5-stable_linux.x86_64 --path gcp-aethel-client</code> and login using <code>dev@aethel.local</code> / <code>Password1!</code>.</p>
+            </div>
+        </section>
+
         <section>
             <h2>Choose A Workspace</h2>
             <p class="section-lead">Use one of these exact workspace ids with <code>--workspace</code>.</p>
