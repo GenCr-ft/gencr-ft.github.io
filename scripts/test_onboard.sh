@@ -108,6 +108,27 @@ if [[ -f "$_ghlog9" ]] && grep -q 'repo clone' "$_ghlog9"; then
 fi
 rm -rf "$_t9"
 
+# 9b. Stale/mismatched ref MUST trigger a fresh `gh repo clone` (not a bare git fetch,
+#     which fails to create the tag locally on shallow clones). git stubbed to fail the
+#     tag-verify so the fast-path is skipped; gh logs the clone and materializes state.
+_t9b="$(mktemp -d)"; _ghlog9b="$_t9b/gh.called"
+(
+  export GFT_STUDIO_HOME="$_t9b"
+  for r in gcs-plt-tools gcs-plt-gemop gcs-core-governance; do mkdir -p "$_t9b/$r/.git"; done  # pre-existing (stale)
+  # shellcheck disable=SC2317
+  git() { return 1; }                                 # tag-verify fails → fast-path skipped
+  # gh repo clone "GenCr-ft/<repo>" "<dest>" -- … → materialize <dest> ($4) + owner installer
+  # shellcheck disable=SC2317
+  gh() { echo "gh $*" >>"$_ghlog9b"; d="$4"; mkdir -p "$d/.git"; case "$d" in */gcs-plt-tools) printf '#!/usr/bin/env bash\n' > "$d/onboard.sh";; esac; }
+  mkdir -p "$_t9b/bin"; printf '#!/usr/bin/env bash\ntrue\n' > "$_t9b/bin/gft"; chmod +x "$_t9b/bin/gft"
+  export PATH="$_t9b/bin:$PATH"
+  bootstrap_shared_tooling 2>/dev/null
+)
+if [[ ! -f "$_ghlog9b" ]] || [[ "$(grep -c 'repo clone' "$_ghlog9b")" -ne 3 ]]; then
+  echo "FAIL: stale ref did not trigger a fresh 'gh repo clone' for all 3 repos"; ((failed++))
+fi
+rm -rf "$_t9b"
+
 # 10. bootstrap_shared_tooling dies if gft is NOT on PATH after install (recon risk #3).
 _t10="$(mktemp -d)"
 (

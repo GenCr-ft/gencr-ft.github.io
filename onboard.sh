@@ -38,6 +38,12 @@ studio_home() { printf '%s' "${GFT_STUDIO_HOME:-$HOME/.gft-studio}"; }
 # tooling (ENG-ADR-088 §Pinned-Tag Governance). A single tag name shared across the 3
 # repos. NEVER a moving branch. Advancing the pin is a deliberate, reviewed change to
 # this file.
+#
+# RELEASE COORDINATION: to advance the pin, tag ALL THREE shared repos
+# (gcs-plt-tools, gcs-plt-gemop, gcs-core-governance) with the new tag BEFORE merging
+# the bump here. GitHub has no atomic cross-repo tagging; if a tag is missing from any
+# repo, bootstrap_shared_tooling fails loudly (die) on the missing clone — safe, but
+# it means a half-tagged release breaks onboarding until all three are tagged.
 plt_ref() { printf '%s' "${GFT_PLT_REF:-gft-bootstrap-v1.0.0}"; }
 
 # Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
@@ -141,7 +147,7 @@ bootstrap_shared_tooling() {
     # `git fetch <tag>` pitfall (the tag is not created locally by a bare fetch).
     if [ -e "$dest" ]; then
       log "Updating $repo to $ref…"
-      rm -rf "$dest"
+      rm -rf "$dest" || die "Could not remove stale tooling at $dest. Check permissions and re-run."
     fi
     log "Fetching shared tooling: $repo (pinned $ref)…"
     gh repo clone "GenCr-ft/$repo" "$dest" -- \
