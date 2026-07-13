@@ -192,6 +192,80 @@ layout: null
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
         }
 
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .phase {
+            border: 1px solid var(--line);
+            border-top: 4px solid var(--blue);
+            border-radius: 8px;
+            background: var(--panel);
+            padding: 18px 20px;
+        }
+
+        .phase:nth-child(2) {
+            border-top-color: var(--green);
+        }
+
+        .phase h3 {
+            margin: 0 0 4px;
+            font-size: 1rem;
+        }
+
+        .phase .tag {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .steps li {
+            counter-increment: step;
+            position: relative;
+            padding-left: 34px;
+            line-height: 1.55;
+            color: var(--ink);
+        }
+
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phase:nth-child(2) .steps li::before {
+            background: var(--green);
+        }
+
+        @media (max-width: 720px) {
+            .flow {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
         .workspaces {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -319,7 +393,7 @@ layout: null
 
         <section id="quickstart">
             <h2>Quickstart</h2>
-            <p class="section-lead">One command. It installs prerequisites, signs you in to GitHub (one-time device code), clones the tools, and sets up your workspace. If nobody assigned one yet, start with <code>aethel</code>.</p>
+            <p class="section-lead">One command. It installs prerequisites, signs you in to GitHub (one-time device code), clones the tools, and sets up your workspace. If nobody assigned one yet, start with <code>aethel</code>. See <a href="#how-it-works">what the one command does</a> for the full step-by-step.</p>
             <div class="command-grid">
                 <article class="command">
                     <h3>Linux, macOS, or WSL</h3>
@@ -335,6 +409,37 @@ curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel
 curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel</code></pre>
                 </article>
             </div>
+        </section>
+
+        <section id="how-it-works">
+            <h2>What the one command does</h2>
+            <p class="section-lead">You only ever run the <code>curl</code> line above. Under the hood it runs in two phases: a small, secretless <strong>bootstrap</strong> that installs the shared tooling, then a hand-off to the <code>gft onboard</code> CLI that sets up your chosen workspace. Here is the exact sequence.</p>
+            <div class="flow">
+                <article class="phase">
+                    <h3>Phase 1 &mdash; Bootstrap</h3>
+                    <p class="tag">Run by <code>curl -fsSL https://gencr-ft.github.io/onboard.sh | bash</code></p>
+                    <ol class="steps">
+                        <li>Installs any missing prerequisites (<code>git</code>, <code>curl</code>, <code>gh</code>, <code>python3</code>).</li>
+                        <li>Signs you in to GitHub with a one-time device code (skipped if you are already authenticated) &mdash; no secrets are stored by the script.</li>
+                        <li>Clones the studio&rsquo;s shared tooling (<code>gcs-plt-tools</code>, <code>gcs-plt-gemop</code>, <code>gcs-core-governance</code>) into <code>~/.gft-studio</code> at a pinned release tag.</li>
+                        <li>Installs the global <code>gft</code> CLI onto your <code>PATH</code>.</li>
+                        <li>Hands off to Phase&nbsp;2: <code>exec gft onboard --workspace &lt;id&gt;</code>.</li>
+                    </ol>
+                </article>
+                <article class="phase">
+                    <h3>Phase 2 &mdash; <code>gft onboard</code></h3>
+                    <p class="tag">The CLI that sets up your workspace</p>
+                    <ol class="steps">
+                        <li>Per-user machine setup: configures your global Git identity, generates an SSH key, and puts <code>~/.local/bin</code> on your <code>PATH</code>.</li>
+                        <li>Clones your workspace&rsquo;s repositories into <code>&lt;current-folder&gt;/&lt;workspace&gt;/</code> &mdash; next to where you ran the command, never a fixed home.</li>
+                        <li>Generates <code>&lt;workspace&gt;.code-workspace</code> listing those repositories.</li>
+                        <li>Installs VS&nbsp;Code if it is missing (from the official Microsoft source) plus the workspace&rsquo;s pinned recommended extensions.</li>
+                        <li>Deploys a per-workspace <code>.claude/</code> (agents and skills) for AI assistance.</li>
+                        <li>Runs a workspace health check so you know the setup is sound.</li>
+                    </ol>
+                </article>
+            </div>
+            <p class="section-lead" style="margin-top:22px">Re-running the command is safe &mdash; every step is idempotent, so nothing already in place is re-cloned or overwritten. You can opt out of individual steps with <code>--no-machine-setup</code>, <code>--no-editor</code>, or <code>--no-extensions</code>. When it finishes, open your workspace with <code>code &lt;workspace&gt;.code-workspace</code> and run <code>gft doctor</code> to confirm everything is healthy.</p>
         </section>
 
         <section id="walking-skeleton">
