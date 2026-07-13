@@ -1,39 +1,44 @@
 #!/usr/bin/env bash
 # ===================================================================
-# GenCr@ft Studio — one-line onboarding bootstrap (ENG-ADR-087)
+# GenCr@ft Studio — one-line onboarding bootstrap (ENG-ADR-088 §4)
 #
 # Public entry point:
 #   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash
 # Non-interactive / CI:
 #   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace <id>
 #
-# Thin, secretless shim (Approach A): installs prerequisites, authenticates via
-# GitHub CLI device flow, clones the pinned gcd-onboarding-scripts orchestrator,
-# and hands off to gft-onboarding.sh. All heavy install/config logic lives in
-# the orchestrator; the global `gft` CLI is installed by gcs-plt-tools (single
-# owner). This script contains NO secrets.
+# Thin, secretless shim (ENG-ADR-088 Phase 1 — shared-tooling bootstrap): installs
+# prerequisites, authenticates via GitHub CLI device flow, clones the shared tooling
+# repos into ~/.gft-studio at a pinned release tag, installs the global `gft` CLI via
+# its owner (gcs-plt-tools), then hands off to `gft onboard` (Phase 2 — workspace
+# onboarding). The shim contains NO workspace-clone logic and NO secrets.
 #
 # Workspaces: aethel | gft-platform | onboarding | agent-ecosystem
-# Env: GFT_PROJECTS_HOME (default ~/gft_studio), GFT_ONBOARDING_REF (pinned ref,
-#      default "main" until the first onboarding-vX.Y.Z release tag is cut).
+# Env: GFT_STUDIO_HOME (default ~/.gft-studio), GFT_PLT_REF (pinned release tag).
 # ===================================================================
 
-ONBOARDING_REPO="GenCr-ft/gcd-onboarding-scripts"
 BOOTSTRAP_WORKSPACE=""
 
-# All human-facing logging goes to STDERR so that functions which "return" a value
-# via stdout (e.g. clone_orchestrator, select_workspace) are never polluted when
-# captured with $(...). Regression guard: scripts/test_onboard.sh checks 7 & 8.
+# The shared-tooling repos cloned once into ~/.gft-studio (ENG-ADR-088 §Repository
+# Classification). gcs-plt-tools owns the global `gft` CLI; gcs-plt-gemop supplies the
+# gem/skill library that `gft onboard` symlinks into each workspace's .claude; and
+# gcs-core-governance is the SSoT.
+SHARED_TOOLING_REPOS="gcs-plt-tools gcs-plt-gemop gcs-core-governance"
+
+# All human-facing logging goes to STDERR so functions that "return" a value via
+# stdout (select_workspace) are never polluted when captured with $(...).
 log()  { printf '\033[0;34m[onboard]\033[0m %s\n' "$*" >&2; }
 warn() { printf '\033[0;33m[onboard]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[0;31m[onboard]\033[0m %s\n' "$*" >&2; exit 1; }
 ok()   { printf '\033[0;32m[onboard]\033[0m %s\n' "$*" >&2; }
 
-projects_home() { printf '%s' "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"; }
-# Pinned release tag — the sole trust anchor between this public shim and the
-# orchestrator (ENG-ADR-087). NEVER defaults to a moving branch. Advancing the
-# pin is a deliberate, reviewed change to this file.
-onboarding_ref() { printf '%s' "${GFT_ONBOARDING_REF:-onboarding-v1.0.4}"; }
+studio_home() { printf '%s' "${GFT_STUDIO_HOME:-$HOME/.gft-studio}"; }
+
+# Pinned release tag — the sole trust anchor between this public shim and the shared
+# tooling (ENG-ADR-088 §Pinned-Tag Governance). A single tag name shared across the 3
+# repos. NEVER a moving branch. Advancing the pin is a deliberate, reviewed change to
+# this file.
+plt_ref() { printf '%s' "${GFT_PLT_REF:-gft-bootstrap-v1.0.0}"; }
 
 # Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
 is_safe_ref() {
@@ -113,37 +118,44 @@ ensure_gh_auth() {
     || die "GitHub authentication failed. Re-run after 'gh auth login'."
 }
 
-# Clone (or refresh) the orchestrator at the pinned ref. Idempotent.
-clone_orchestrator() {
-  local home ref dest
-  home="$(projects_home)"; ref="$(onboarding_ref)"; dest="$home/gcd-onboarding-scripts"
-  is_safe_ref "$ref" || die "Refusing unsafe GFT_ONBOARDING_REF '$ref'."
+# Phase 1: clone the shared-tooling repos into ~/.gft-studio at the pinned tag and
+# install the global `gft` CLI via its owner (gcs-plt-tools). Idempotent. No workspace
+# or project-repo cloning happens here — that is Phase 2, owned by `gft onboard`.
+bootstrap_shared_tooling() {
+  local home ref repo dest
+  home="$(studio_home)"; ref="$(plt_ref)"
+  is_safe_ref "$ref" || die "Refusing unsafe GFT_PLT_REF '$ref'."
   mkdir -p "$home"
-  # Fast path: an existing clone whose HEAD is already the pinned tag's commit —
-  # no network, no re-clone. (Local-only check; safe on shallow clones.)
-  if [ -d "$dest/.git" ] \
-     && git -C "$dest" rev-parse --verify -q "refs/tags/${ref}^{commit}" >/dev/null 2>&1 \
-     && [ "$(git -C "$dest" rev-parse -q HEAD 2>/dev/null)" = "$(git -C "$dest" rev-parse -q "refs/tags/${ref}^{commit}" 2>/dev/null)" ]; then
-    log "Onboarding toolkit already at $ref."
-    printf '%s' "$dest"
-    return 0
-  fi
-  # Otherwise — absent, stale/non-git, or a different (older) ref — (re)clone fresh at
-  # the pinned tag. Re-cloning is ~220 KiB and always lands on the exact ref, which
-  # avoids the shallow-clone `git fetch <tag>` pitfall (tag not created locally).
-  if [ -e "$dest" ]; then
-    log "Updating the onboarding toolkit to $ref…"
-    rm -rf "$dest"
-  fi
-  log "Fetching the onboarding toolkit (pinned $ref)…"
-  gh repo clone "$ONBOARDING_REPO" "$dest" -- \
-      --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
-    || die "Download failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
-  printf '%s' "$dest"
-}
-
-build_handoff_cmd() {
-  printf 'bash gft-onboarding.sh --quickstart --workspace %s' "$1"
+  for repo in $SHARED_TOOLING_REPOS; do
+    dest="$home/$repo"
+    # Fast path: an existing clone whose HEAD is already the pinned tag's commit —
+    # no network, no re-clone. (Local-only check; safe on shallow clones.)
+    if [ -d "$dest/.git" ] \
+       && git -C "$dest" rev-parse --verify -q "refs/tags/${ref}^{commit}" >/dev/null 2>&1 \
+       && [ "$(git -C "$dest" rev-parse -q HEAD 2>/dev/null)" = "$(git -C "$dest" rev-parse -q "refs/tags/${ref}^{commit}" 2>/dev/null)" ]; then
+      log "$repo already at $ref."
+      continue
+    fi
+    # Otherwise — absent, stale/non-git, or a different ref — (re)clone fresh at the
+    # pinned tag. Re-cloning always lands on the exact ref, avoiding the shallow-clone
+    # `git fetch <tag>` pitfall (the tag is not created locally by a bare fetch).
+    if [ -e "$dest" ]; then
+      log "Updating $repo to $ref…"
+      rm -rf "$dest"
+    fi
+    log "Fetching shared tooling: $repo (pinned $ref)…"
+    gh repo clone "GenCr-ft/$repo" "$dest" -- \
+        --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
+      || die "Download of $repo failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
+  done
+  # Install the global `gft` CLI via the canonical owner (unchanged mechanism).
+  log "Installing the gft CLI…"
+  ( cd "$home/gcs-plt-tools" && bash onboard.sh ) \
+    || die "gft installation failed. Re-run this command, or share the output with #devops-support."
+  # CRITICAL: gft must be on PATH in THIS process before we exec it.
+  export PATH="$HOME/.local/bin:$PATH"
+  command -v gft >/dev/null 2>&1 \
+    || die "gft was installed but is not on PATH. Restart your terminal and run: gft onboard"
 }
 
 # Echoes the chosen workspace, or empty string for the safe non-interactive default.
@@ -195,12 +207,11 @@ main() {
     die "Choose one of the four canonical workspaces."
   fi
 
-  local dest; dest="$(clone_orchestrator)"
-  cd "$dest" || die "Could not enter $dest."
-
+  # Non-interactive with no workspace: prerequisites + auth are done; tell the user
+  # which command finishes the setup for their assigned workspace, and exit cleanly.
   if [ -z "$ws" ]; then
-    ok "Prerequisites are installed and the onboarding toolkit is ready."
-    log "To finish setting up a workspace, run one of these (pick the one you were assigned):"
+    ok "Prerequisites are installed and you are authenticated with GitHub."
+    log "To set up a workspace, run one of these (pick the one you were assigned):"
     local w
     for w in aethel gft-platform onboarding agent-ecosystem; do
       log "  curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace $w"
@@ -208,39 +219,18 @@ main() {
     exit 0
   fi
 
-  log "Setting up your '$ws' workspace — installing the gft CLI, tools, and repositories…"
-  log "(this can take a few minutes on first run)"
-  if bash gft-onboarding.sh --quickstart --workspace "$ws"; then
-    print_success_summary "$ws"
-  else
-    die "Workspace setup hit an error above. Re-run this same command, or share the log with #devops-support."
-  fi
+  log "Setting up shared tooling and the gft CLI (this can take a few minutes on first run)…"
+  bootstrap_shared_tooling
+
+  # Phase 2 hand-off: `gft onboard` owns workspace cloning, editor + .claude
+  # provisioning, per-user machine setup, and the completion summary. Replace this
+  # process with it so its exit status is the script's exit status.
+  log "Handing off to: gft onboard --workspace $ws"
+  exec gft onboard --workspace "$ws"
 }
 
-# Friendly, non-technical completion summary printed to stdout at the very end.
-print_success_summary() {
-  local ws="$1" gft_bin="${HOME}/.local/bin/gft" ver=""
-  if [ -x "$gft_bin" ]; then
-    ver="$("$gft_bin" version 2>/dev/null || "$gft_bin" --version 2>/dev/null || true)"
-    ver="$(printf '%s' "$ver" | head -1)"
-  fi
-  printf '\n\033[0;32m✓ GenCr@ft onboarding complete — you are set up.\033[0m\n\n'
-  printf '  Workspace:    %s\n' "$ws"
-  printf '  Your repos:   %s\n' "$(projects_home)"
-  if [ -x "$gft_bin" ]; then
-    printf '  gft CLI:      installed at %s%s\n' "$gft_bin" "${ver:+  ($ver)}"
-  else
-    printf '  gft CLI:      installed (see the messages above for details)\n'
-  fi
-  printf '\n  What to do next:\n'
-  printf '   1. Close and reopen your terminal   (or run:  source ~/.bashrc)\n'
-  printf '   2. Confirm everything is healthy:   gft doctor\n'
-  printf '   3. Explore your repositories in:    %s\n' "$(projects_home)"
-  printf '\n  Questions or something looks off? Ask in #devops-support.\n\n'
-}
-
-# Library guard: tests source this file with GFT_BOOTSTRAP_LIB=1 to assert
-# individual functions without executing the bootstrap.
+# Library guard: tests source this file with GFT_BOOTSTRAP_LIB=1 to assert individual
+# functions without executing the bootstrap.
 if [ "${GFT_BOOTSTRAP_LIB:-0}" != "1" ]; then
   main "$@"
 fi

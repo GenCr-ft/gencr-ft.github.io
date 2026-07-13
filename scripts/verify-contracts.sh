@@ -31,10 +31,9 @@ else
   exit 1
 fi
 
-echo "🔍 Validating newcomer onboarding content (ENG-ADR-087 one-liner + 4 canonical workspaces)..."
+echo "🔍 Validating newcomer onboarding content (ENG-ADR-088 one-liner + 4 canonical workspaces)..."
 required_content=(
   "curl -fsSL https://gencr-ft.github.io/onboard.sh"
-  "gcd-onboarding-scripts"
   "aethel"
   "gft-platform"
   "onboarding"
@@ -70,6 +69,15 @@ if [ ! -f "$REPO_ROOT/onboard.sh" ]; then
   exit 1
 fi
 bash -n "$REPO_ROOT/onboard.sh" || { echo "❌ Error: onboard.sh has a syntax error." >&2; exit 1; }
+# ENG-ADR-088 §4: the shim bootstraps shared tooling then hands off to `gft onboard`;
+# it must NOT retain the old orchestrator clone / gft-onboarding.sh delegation.
+for expected_flow in "bootstrap_shared_tooling" "exec gft onboard"; do
+  grep -qF "$expected_flow" "$REPO_ROOT/onboard.sh" \
+    || { echo "❌ Error: onboard.sh is missing the ENG-ADR-088 §4 flow: '$expected_flow'" >&2; exit 1; }
+done
+if grep -qE 'gcd-onboarding-scripts|gft-onboarding\.sh' "$REPO_ROOT/onboard.sh"; then
+  echo "❌ Error: onboard.sh still references the removed orchestrator (ENG-ADR-088 §4 forbids it)." >&2; exit 1
+fi
 if grep -qiE 'ghp_|github_pat_|-----BEGIN|token=' "$REPO_ROOT/onboard.sh"; then
   echo "❌ Error: onboard.sh appears to contain a secret/token (ENG-ADR-087 forbids this)." >&2
   exit 1
