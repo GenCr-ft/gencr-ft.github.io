@@ -444,12 +444,63 @@ curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace aethel
 
         <section id="walking-skeleton">
             <h2>Local Walking Skeleton Integration</h2>
-            <p class="section-lead">Once your workspace is synced, you can boot the complete authoritative game backend locally in under two minutes.</p>
+            <p class="section-lead">Once your workspace is synced, you can boot the complete authoritative game backend locally &mdash; auth, persistence, and simulation.</p>
             <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px;">
-                <p style="margin: 0 0 10px;">Run the canonical entrypoint script from the root directory of your workspace:</p>
-                <pre><code>./run-walking-skeleton.sh</code></pre>
-                <p style="margin: 14px 0 0;">This script performs pre-flight checks, generates RS256 cryptographic keys, starts local Postgres &amp; Redis instances via Docker, builds the authoritative packages (voxel engine), and boots the auth and game server simulation engines.</p>
-                <p style="margin: 10px 0 0;">To connect the Godot client, run <code>../Godot_v4.5-stable_linux.x86_64 --path gcp-aethel-client</code> and login using <code>dev@aethel.local</code> / <code>Password1!</code>.</p>
+                <p style="margin: 0 0 10px;"><strong>Before you run it</strong>, this step needs a few tools that the onboarding one-liner does <em>not</em> install for you yet:</p>
+                <ul style="margin: 0 0 14px; padding-left: 22px;">
+                    <li><strong>Docker</strong> with <code>docker compose</code>, and the daemon running (Docker Desktop on macOS and Windows)</li>
+                    <li><strong>Node.js 20+</strong> with <code>npm</code></li>
+                    <li><code>openssl</code></li>
+                    <li><code>wasm-pack</code> &mdash; only needed when the Rust world-generation sources are newer than the built WASM package</li>
+                </ul>
+                <p style="margin: 0 0 10px;">Run the canonical entrypoint from the root of your workspace:</p>
+                <pre><code>./start_aethel.sh</code></pre>
+                <p style="margin: 14px 0 0;">It runs pre-flight checks, generates RS256 keys, starts local Postgres &amp; Redis via Docker, builds the authoritative packages (voxel engine, PCG WASM), then boots the authentication and game-server simulation engines.</p>
+                <p style="margin: 10px 0 0;">Services come up on <code>:3010</code> (auth), <code>:3100</code> (game HTTP), <code>:3001</code> (game WebSocket), <code>:5433</code> (Postgres) and <code>:6380</code> (Redis). If a port is already in use, that is the first thing to check.</p>
+                <p style="margin: 14px 0 0;">To connect the Godot client, point <code>GODOT_BIN</code> at your Godot&nbsp;4.5 executable and open the client project:</p>
+                <pre><code># macOS (Godot installed from the official .app)
+export GODOT_BIN="/Applications/Godot.app/Contents/MacOS/Godot"
+
+# Linux / WSL2 (binary extracted in your workspace root)
+export GODOT_BIN="$PWD/Godot_v4.5-stable_linux.x86_64"
+
+"$GODOT_BIN" --path gcp-aethel-client</code></pre>
+                <p style="margin: 10px 0 0;">Log in with <code>dev@aethel.local</code> / <code>Password1!</code>. These are local development credentials only &mdash; they exist solely in your own Postgres container.</p>
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>If Something Goes Wrong</h2>
+            <p class="section-lead">Onboarding is designed to be safe to re-run. Nothing already in place is re-cloned or overwritten, so running the same command again is always the first thing to try.</p>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px;">
+                <p style="margin: 0 0 14px;"><strong>Re-run the one-liner.</strong> Most failures are transient &mdash; a dropped connection mid-clone, or an expired GitHub login. Re-running resumes where it stopped.</p>
+                <pre><code>curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace &lt;your-workspace&gt;</code></pre>
+                <p style="margin: 14px 0 8px;">If it still fails, the message tells you which phase stopped:</p>
+                <table style="width:100%; border-collapse: collapse; margin: 0 0 14px;">
+                    <tr>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;"><strong>A prerequisite could not be installed</strong></td>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line);">Install the named tool with your own package manager, then re-run. On macOS this usually means installing <a href="https://brew.sh">Homebrew</a> first.</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;"><strong>GitHub sign-in failed</strong></td>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line);">Run <code>gh auth login</code> on its own, complete the device-code flow, then re-run.</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;"><strong>A download was refused</strong></td>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line);">Your account is probably not in the <code>GenCr-ft</code> organization yet. Ask your team lead to confirm your membership.</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;"><strong>The <code>gft</code> CLI did not install</strong></td>
+                        <td style="padding:8px 10px; border-bottom:1px solid var(--line);">Re-run the installer for the CLI on its own:<br><code>cd ~/.gft-studio/gcs-plt-tools &amp;&amp; bash onboard.sh</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 10px; vertical-align:top;"><strong><code>gft</code> is installed but not found</strong></td>
+                        <td style="padding:8px 10px;">Close and reopen your terminal, or add it to your <code>PATH</code>:<br><code>export PATH="$HOME/.local/bin:$PATH"</code></td>
+                    </tr>
+                </table>
+                <p style="margin: 0 0 10px;"><strong>Check your setup at any time</strong> with the built-in health check:</p>
+                <pre><code>gft doctor</code></pre>
+                <p style="margin: 14px 0 0;"><strong>Still stuck?</strong> Ask in <code>#devops-support</code> with the output of the failing command, or <a href="https://github.com/GenCr-ft/gcd-onboarding-scripts/issues/new">open an onboarding issue</a>. A failure that needs a manual workaround is a bug in onboarding &mdash; please report it rather than working around it silently.</p>
             </div>
         </section>
 
