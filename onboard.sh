@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ===================================================================
-# GenCr@ft Studio — one-line onboarding bootstrap (ENG-ADR-088 §4)
+# GenCr@ft Studio - one-line onboarding bootstrap (ENG-ADR-088 section 4)
 #
 # Public entry point:
 #   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash
 # Non-interactive / CI:
 #   curl -fsSL https://gencr-ft.github.io/onboard.sh | bash -s -- --workspace <id>
 #
-# Thin, secretless shim (ENG-ADR-088 Phase 1 — shared-tooling bootstrap): installs
+# Thin, secretless shim (ENG-ADR-088 Phase 1 - shared-tooling bootstrap): installs
 # prerequisites, authenticates via GitHub CLI device flow, clones the shared tooling
 # repos into ~/.gft-studio at a pinned release tag, installs the global `gft` CLI via
-# its owner (gcs-plt-tools), then hands off to `gft onboard` (Phase 2 — workspace
+# its owner (gcs-plt-tools), then hands off to `gft onboard` (Phase 2 - workspace
 # onboarding). The shim contains NO workspace-clone logic and NO secrets.
 #
 # Workspaces: aethel | gft-platform | onboarding | agent-ecosystem
@@ -19,7 +19,7 @@
 
 BOOTSTRAP_WORKSPACE=""
 
-# The shared-tooling repos cloned once into ~/.gft-studio (ENG-ADR-088 §Repository
+# The shared-tooling repos cloned once into ~/.gft-studio (ENG-ADR-088 section Repository
 # Classification). gcs-plt-tools owns the global `gft` CLI; gcs-plt-gemop supplies the
 # gem/skill library that `gft onboard` symlinks into each workspace's .claude; and
 # gcs-core-governance is the SSoT.
@@ -34,15 +34,15 @@ ok()   { printf '\033[0;32m[onboard]\033[0m %s\n' "$*" >&2; }
 
 studio_home() { printf '%s' "${GFT_STUDIO_HOME:-$HOME/.gft-studio}"; }
 
-# Pinned release tag — the sole trust anchor between this public shim and the shared
-# tooling (ENG-ADR-088 §Pinned-Tag Governance). A single tag name shared across the 3
+# Pinned release tag - the sole trust anchor between this public shim and the shared
+# tooling (ENG-ADR-088 section Pinned-Tag Governance). A single tag name shared across the 3
 # repos. NEVER a moving branch. Advancing the pin is a deliberate, reviewed change to
 # this file.
 #
 # RELEASE COORDINATION: to advance the pin, tag ALL THREE shared repos
 # (gcs-plt-tools, gcs-plt-gemop, gcs-core-governance) with the new tag BEFORE merging
 # the bump here. GitHub has no atomic cross-repo tagging; if a tag is missing from any
-# repo, bootstrap_shared_tooling fails loudly (die) on the missing clone — safe, but
+# repo, bootstrap_shared_tooling fails loudly (die) on the missing clone - safe, but
 # it means a half-tagged release breaks onboarding until all three are tagged.
 plt_ref() { printf '%s' "${GFT_PLT_REF:-gft-bootstrap-v1.0.1}"; }
 
@@ -94,7 +94,7 @@ ensure_cmd() {
 # GitHub CLI needs a dedicated apt repo on Debian/Ubuntu; other managers ship it.
 ensure_gh() {
   command -v gh >/dev/null 2>&1 && return 0
-  log "Installing GitHub CLI (gh)…"
+  log "Installing GitHub CLI (gh)..."
   case "$(detect_pkg_mgr)" in
     apt)
       sudo mkdir -p -m 755 /etc/apt/keyrings
@@ -118,7 +118,7 @@ ensure_gh_auth() {
     log "GitHub CLI already authenticated."
     return 0
   fi
-  log "Authenticating with GitHub (device flow — you will get a one-time code)…"
+  log "Authenticating with GitHub (device flow - you will get a one-time code)..."
   # Least-privilege: clone-only bootstrap needs repo read + org membership, not workflow/admin.
   gh auth login --hostname github.com --git-protocol https --scopes "repo,read:org" --web \
     || die "GitHub authentication failed. Re-run after 'gh auth login'."
@@ -126,7 +126,7 @@ ensure_gh_auth() {
 
 # Phase 1: clone the shared-tooling repos into ~/.gft-studio at the pinned tag and
 # install the global `gft` CLI via its owner (gcs-plt-tools). Idempotent. No workspace
-# or project-repo cloning happens here — that is Phase 2, owned by `gft onboard`.
+# or project-repo cloning happens here - that is Phase 2, owned by `gft onboard`.
 bootstrap_shared_tooling() {
   local home ref repo dest
   home="$(studio_home)"; ref="$(plt_ref)"
@@ -134,7 +134,7 @@ bootstrap_shared_tooling() {
   mkdir -p "$home"
   for repo in $SHARED_TOOLING_REPOS; do
     dest="$home/$repo"
-    # Fast path: an existing clone whose HEAD is already the pinned tag's commit —
+    # Fast path: an existing clone whose HEAD is already the pinned tag's commit -
     # no network, no re-clone. (Local-only check; safe on shallow clones.)
     if [ -d "$dest/.git" ] \
        && git -C "$dest" rev-parse --verify -q "refs/tags/${ref}^{commit}" >/dev/null 2>&1 \
@@ -142,20 +142,20 @@ bootstrap_shared_tooling() {
       log "$repo already at $ref."
       continue
     fi
-    # Otherwise — absent, stale/non-git, or a different ref — (re)clone fresh at the
+    # Otherwise - absent, stale/non-git, or a different ref - (re)clone fresh at the
     # pinned tag. Re-cloning always lands on the exact ref, avoiding the shallow-clone
     # `git fetch <tag>` pitfall (the tag is not created locally by a bare fetch).
     if [ -e "$dest" ]; then
-      log "Updating $repo to $ref…"
+      log "Updating $repo to $ref..."
       rm -rf "$dest" || die "Could not remove stale tooling at $dest. Check permissions and re-run."
     fi
-    log "Fetching shared tooling: $repo (pinned $ref)…"
+    log "Fetching shared tooling: $repo (pinned $ref)..."
     gh repo clone "GenCr-ft/$repo" "$dest" -- \
         --branch "$ref" --depth 1 --quiet -c advice.detachedHead=false 2>/dev/null \
       || die "Download of $repo failed. Ask your team lead to confirm your GitHub account is in the GenCr-ft org, then re-run."
   done
   # Install the global `gft` CLI via the canonical owner (unchanged mechanism).
-  log "Installing the gft CLI…"
+  log "Installing the gft CLI..."
   ( cd "$home/gcs-plt-tools" && bash onboard.sh ) \
     || die "gft installation failed. Re-run this command, or share the output with #devops-support."
   # CRITICAL: gft must be on PATH in THIS process before we exec it.
@@ -225,7 +225,7 @@ main() {
     exit 0
   fi
 
-  log "Setting up shared tooling and the gft CLI (this can take a few minutes on first run)…"
+  log "Setting up shared tooling and the gft CLI (this can take a few minutes on first run)..."
   bootstrap_shared_tooling
 
   # Phase 2 hand-off: `gft onboard` owns workspace cloning, editor + .claude
