@@ -44,7 +44,7 @@ studio_home() { printf '%s' "${GFT_STUDIO_HOME:-$HOME/.gft-studio}"; }
 # the bump here. GitHub has no atomic cross-repo tagging; if a tag is missing from any
 # repo, bootstrap_shared_tooling fails loudly (die) on the missing clone - safe, but
 # it means a half-tagged release breaks onboarding until all three are tagged.
-plt_ref() { printf '%s' "${GFT_PLT_REF:-gft-bootstrap-v1.0.1}"; }
+plt_ref() { printf '%s' "${GFT_PLT_REF:-gft-bootstrap-v1.0.2}"; }
 
 # Reject refs that could smuggle a git option (leading '-') or shell/path tricks.
 is_safe_ref() {
