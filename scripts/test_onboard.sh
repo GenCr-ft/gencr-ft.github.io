@@ -170,6 +170,90 @@ if [[ ! -f "$_t11/gft.argv" ]] || ! grep -q "onboard --workspace onboarding" "$_
 fi
 rm -rf "$_t11"
 
+# ===================================================================
+# 12. ASCII-only guard (#57)
+#
+# The shim is piped from curl into bash on machines whose locale we do not
+# control, and macOS still ships bash 3.2. Bash decides where a variable name
+# ends using isalnum(), which is LOCALE-DEPENDENT: under a locale where high
+# bytes classify as alphanumeric, "$ref" followed directly by a multi-byte
+# ellipsis parses as a variable named ref+ellipsis, which is unset, so set -u
+# aborts the entire run.
+#
+# That is exactly how onboarding died for returning macOS users:
+#   bash: line 149: ref?: unbound variable
+#
+# Bracing that one variable would fix only the symptom. Keeping the file
+# ASCII-only removes the whole class. These are byte-level assertions rather
+# than string comparisons, because the bug is about byte classification.
+# ===================================================================
+_nonascii="$(LC_ALL=C grep -n '[^[:print:][:space:]]' "$REPO_ROOT/onboard.sh" 2>/dev/null || true)"
+if [[ -n "$_nonascii" ]]; then
+  echo "FAIL: onboard.sh must be ASCII-only; non-ASCII found on:"
+  while IFS= read -r _l; do echo "       $_l"; done <<< "$_nonascii"
+  ((failed++))
+fi
+
+# A variable reference immediately followed by a byte above 0x7F is the precise
+# shape that breaks. Asserted separately so a regression names the real hazard
+# even if the broad ASCII check is ever relaxed.
+_adjacent="$(LC_ALL=C grep -nE '\$\{?[A-Za-z_][A-Za-z0-9_]*\}?[^[:print:][:space:]]' "$REPO_ROOT/onboard.sh" 2>/dev/null || true)"
+if [[ -n "$_adjacent" ]]; then
+  echo "FAIL: variable reference directly followed by a non-ASCII byte (aborts under set -u on some locales):"
+  while IFS= read -r _l; do echo "       $_l"; done <<< "$_adjacent"
+  ((failed++))
+fi
+
+# ===================================================================
+# 13. Returning-user path: shared tooling present at an OLDER pinned tag (#57)
+#
+# This is the path the pre-release clone rehearsal missed. Cloning into empty
+# temp directories only exercises the fresh-machine branch; the abort lived in
+# the `[ -e "$dest" ]` update branch, reachable only when the directory already
+# exists AND is not at the pinned tag -- precisely what bumping the pin does to
+# every returning user.
+#
+# NOTE: a glibc runner cannot reproduce the macOS locale classification (glibc
+# isalnum is ASCII-only in the C locale), so this proves the update branch is
+# reached and survives under set -u. Check 12 is what prevents recurrence.
+# ===================================================================
+_t12="$(mktemp -d)"
+(
+  set -euo pipefail
+  export GFT_STUDIO_HOME="$_t12/.gft-studio"
+  export GFT_PLT_REF="gft-bootstrap-v9.9.9"   # newer than what is checked out
+  mkdir -p "$GFT_STUDIO_HOME"
+  # Real repos at an "old" tag so the fast-path check fails and the update
+  # branch is taken.
+  for _r in gcs-plt-tools gcs-plt-gemop gcs-core-governance; do
+    _d="$GFT_STUDIO_HOME/$_r"
+    git init -q "$_d"
+    git -C "$_d" -c user.email=t@example.invalid -c user.name=t \
+        commit -q --allow-empty -m fixture
+    git -C "$_d" tag gft-bootstrap-v0.0.1
+  done
+  # gh is mocked: we only need to reach and pass the update branch, not clone.
+  _mb="$_t12/bin"; mkdir -p "$_mb"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$_mb/gh"; chmod +x "$_mb/gh"
+  export PATH="$_mb:$PATH"
+  # shellcheck disable=SC1091
+  GFT_BOOTSTRAP_LIB=1 source "$REPO_ROOT/onboard.sh"
+  bootstrap_shared_tooling
+) >"$_t12/out.log" 2>&1
+_rc=$?
+if LC_ALL=C grep -qi "unbound variable" "$_t12/out.log"; then
+  echo "FAIL: returning-user path aborted with an unbound variable:"
+  while IFS= read -r _l; do echo "       $_l"; done < <(LC_ALL=C grep -i "unbound variable" "$_t12/out.log")
+  ((failed++))
+fi
+# The update branch must actually have been reached, else this test proves nothing.
+if ! LC_ALL=C grep -q "Updating" "$_t12/out.log"; then
+  echo "FAIL: returning-user path never reached the update branch (test would be vacuous). rc=$_rc"
+  sed 's/^/       /' "$_t12/out.log" | head -10
+  ((failed++))
+fi
+rm -rf "$_t12"
+
 if [[ $failed -ne 0 ]]; then
   echo "🔴 test_onboard: $failed check(s) failed."
   exit 1
